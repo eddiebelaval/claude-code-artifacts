@@ -1,29 +1,19 @@
-# /visualize — A Claude Code Skill for Interactive HTML Artifacts
+# Claude Code Artifacts
 
-A single-file [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skill that generates self-contained, interactive HTML visualizations from natural language descriptions.
+Two [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills that generate self-contained, interactive HTML artifacts from natural language.
 
-Type `/visualize [topic]` and get a zero-dependency HTML page with dark theme, tabbed views, animated flow diagrams, and actionable assessment checklists — all from one prompt.
+| Skill | Purpose | Command |
+|-------|---------|---------|
+| **`/visualize`** | Explain what exists | `/visualize [topic]` |
+| **`/blueprint`** | Plan what to build | `/blueprint [project]` |
 
-## What It Does
-
-Instead of explaining architecture, workflows, or systems as walls of text, `/visualize` produces interactive HTML pages you can open in a browser, share with teammates, or commit to a repo.
-
-Each artifact includes:
-
-- **Tabbed views** for multi-faceted topics (overview, details, cheatsheet)
-- **Animated SVG flow diagrams** with directional flow lines and traveling dots
-- **Interactive cards** that expand/collapse for progressive disclosure
-- **Assessment tab** with persistent checkboxes (localStorage), severity badges, and copy-paste prompts
-- **Embedded JSON data model** for programmatic updates
-
-Everything is a single `.html` file. No CDN links. No build step. No dependencies.
+Both produce zero-dependency HTML files with a shared design system: dark theme, animated SVG diagrams, tabbed views, persistent checkboxes, and copy-paste prompts.
 
 ## Installation
 
-Copy one file:
-
 ```bash
 cp commands/visualize.md ~/.claude/commands/
+cp commands/blueprint.md ~/.claude/commands/
 ```
 
 Then in any Claude Code session:
@@ -31,22 +21,46 @@ Then in any Claude Code session:
 ```
 /visualize Homer architecture
 /visualize how our auth flow works
-/visualize the deployment pipeline
-/visualize difference between REST and GraphQL
+/blueprint new dashboard feature
+/blueprint --update my-project
 ```
+
+## The Two Skills
+
+### /visualize — Explain What Exists
+
+Generates interactive HTML pages that explain architecture, workflows, codebases, or concepts visually. Each artifact includes:
+
+- **Tabbed views** for multi-faceted topics (overview, details, cheatsheet)
+- **Animated SVG flow diagrams** with directional flow lines and traveling dots
+- **Standardized SVG node components** — 7 reusable shapes for architecture diagrams
+- **Interactive cards** that expand/collapse for progressive disclosure
+- **Assessment tab** with persistent checkboxes, severity badges, and copy-paste prompts
+- **Embedded JSON data model** for programmatic updates
+
+### /blueprint — Plan What to Build
+
+Generates interactive build plans with a 6-round structured interview before producing HTML. Each blueprint includes:
+
+- **Conversational intake** — 6 rounds of structured questions (scope, architecture, phases, parallelism, risks, confirmation)
+- **Phase cards** with sequential tasks and parallel batch columns
+- **Parallel Map** — auto-layout SVG dependency graph rendered from JSON data
+- **Hover-to-trace** — hover any task to highlight its upstream (amber) and downstream (teal) dependencies
+- **Progress tracking** — localStorage-persistent checkboxes with real-time progress bars
+- **Batch prompts** — one-paste prompts for entire parallel batches, ready for agent distribution
+- **`--update` flag** — re-read the embedded JSON, merge new progress, regenerate the HTML
 
 ## How It Works
 
-The skill file (`visualize.md`) is a 678-line prompt that defines:
+Each skill file is a detailed prompt (678 lines for visualize, 639 for blueprint) that defines:
 
-1. **A complete design system** — color tokens, typography scale, component patterns, layout rules
+1. **A complete design system** — color tokens, typography, components, layout rules
 2. **An animation system** — staggered reveals, flowing SVG dashes, traveling dots, stat counters
-3. **Structural patterns** — tabs, cards, flow diagrams, assessment checklists
-4. **Standardized SVG components** — 7 reusable node shapes for architecture diagrams
-5. **Assessment framework** — every artifact ends with actionable fixes, next steps, and copy-paste prompts
-6. **Embedded data model** — JSON block in every artifact for programmatic re-reading and updates
+3. **Structural patterns** — tabs, cards, diagrams, checklists
+4. **An assessment framework** — actionable fixes and next steps with copy-paste prompts
+5. **An embedded data model** — JSON block in every artifact for programmatic re-reading and updates
 
-The prompt is the product. Claude Code reads it, understands the design language, and generates consistent artifacts every time.
+The prompts are the product. Claude Code reads them, understands the design language, and generates consistent artifacts every time.
 
 ## Design System
 
@@ -69,21 +83,27 @@ The visual language is called "Factory-Inspired" — adapted from factory.ai.
 
 Open the example files in `examples/` in your browser:
 
+### /visualize examples
 - **`hackathon-kickoff-transcript.html`** — A formatted conversation transcript with speaker cards, tabbed views, and topic sections
 - **`shelf-architecture.html`** — A full system architecture visualization with animated SVG flow diagrams, file tree, data flow steps, assessment checklists with localStorage persistence, and embedded JSON data model
 
+### /blueprint examples
+- **`parallax-blueprint.html`** — A real build plan for a hackathon project, showing phased tasks, parallel batches, dependency mapping, and progress tracking
+
 ## Customization
 
-The design system lives entirely inside `visualize.md`. To adapt it:
+The design system lives inside each `.md` file. To adapt it:
 
 - **Change colors:** Edit the CSS custom properties in the "Color Tokens" section
 - **Change fonts:** Swap the font stack in the "Typography" section
 - **Change structure:** Modify the "Component Patterns" section
 - **Remove assessment tab:** Delete the "Senior Dev Assessment Tab" section (though we recommend keeping it — it makes every artifact actionable)
 
+Both skills share the same design system. Change it in `visualize.md` and mirror the changes in `blueprint.md`, or fork each to have its own look.
+
 ## How This Was Built
 
-This skill was developed iteratively through conversations with Claude Code. There is no traditional source code — the prompt was refined across dozens of artifacts until the design system was consistent and the outputs were reliably high-quality.
+These skills were developed iteratively through conversations with Claude Code. There is no traditional source code — the prompts were refined across dozens of artifacts until the design system was consistent and the outputs were reliably high-quality.
 
 The process:
 1. Started with a vague "make me an HTML visualization"
@@ -91,8 +111,9 @@ The process:
 3. Codified a design system into the prompt
 4. Added animation rules after seeing what worked
 5. Added the assessment framework to make artifacts actionable, not just educational
-6. Added embedded JSON data models to enable programmatic updates
-7. Kept iterating
+6. Built `/blueprint` as the planning counterpart — same system, opposite direction
+7. Added embedded JSON data models to enable programmatic updates and the `--update` flow
+8. Kept iterating
 
 The lesson: a well-specified prompt is a reusable tool.
 

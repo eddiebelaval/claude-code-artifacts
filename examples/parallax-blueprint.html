@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parallax — Build Blueprint</title>
+<style>
+:root {
+  --bg: #020202;
+  --bg-elevated: #0a0a09;
+  --base-card: #0f0e0d;
+  --border-subtle: rgba(90, 85, 80, 0.25);
+  --border-visible: rgba(90, 85, 80, 0.5);
+  --text-primary: #eeeeee;
+  --text-secondary: #a09890;
+  --text-muted: #605850;
+  --accent: #ef6f2e;
+  --amber: #f59e0b;
+  --teal: #4ecdc4;
+  --cyan: #06b6d4;
+  --red: #ef4444;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.header { padding: 40px 40px 0; max-width: 1200px; margin: 0 auto; }
+.header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.header-label { font-family: 'Geist Mono', 'SF Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: 32px; font-weight: 400; letter-spacing: -0.02em; margin-bottom: 4px; }
+.subtitle { color: var(--text-secondary); font-size: 15px; margin-bottom: 24px; }
+.meta-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
+.meta-item { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--text-muted); }
+.meta-item span { color: var(--text-secondary); }
+.progress-container { margin: 0 0 32px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-family: 'Geist Mono', monospace; }
+.progress-bar { height: 4px; background: var(--border-subtle); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.6s ease-out; width: 0%; }
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 32px; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 40px; }
+.tab { padding: 12px 20px; font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); cursor: pointer; border: none; border-bottom: 2px solid transparent; background: none; transition: color 0.2s, border-color 0.2s; }
+.tab:hover { color: var(--text-secondary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; max-width: 1200px; margin: 0 auto; padding: 0 40px 60px; animation: fadeSlideUp 0.3s ease-out; }
+.tab-content.active { display: block; }
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.card { background: var(--base-card); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 24px; margin-bottom: 20px; }
+.section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.section-header h2 { font-size: 18px; font-weight: 400; letter-spacing: -0.01em; }
+.section-header h3 { font-size: 15px; font-weight: 400; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: var(--base-card); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 20px; text-align: center; }
+.stat-value { font-size: 28px; font-weight: 400; color: var(--accent); font-family: 'Geist Mono', monospace; }
+.stat-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-top: 4px; }
+.badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.badge { font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 0.1em; padding: 4px 12px; border: 1px solid var(--border-visible); border-radius: 2px; color: var(--text-secondary); text-transform: uppercase; }
+.phase-card { background: var(--base-card); border: 1px solid var(--border-subtle); border-radius: 4px; margin-bottom: 24px; overflow: hidden; }
+.phase-header { padding: 20px 24px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.phase-title { font-size: 16px; font-weight: 400; letter-spacing: -0.01em; }
+.phase-title .phase-num { color: var(--accent); font-family: 'Geist Mono', monospace; font-size: 12px; margin-right: 8px; }
+.phase-day { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--text-muted); }
+.phase-badge { font-size: 9px; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 2px; font-weight: 600; text-transform: uppercase; font-family: 'Geist Mono', monospace; }
+.phase-badge.not-started { background: rgba(90, 85, 80, 0.2); color: var(--text-muted); }
+.phase-badge.in-progress { background: rgba(239, 111, 46, 0.15); color: var(--accent); }
+.phase-badge.complete { background: rgba(78, 205, 196, 0.15); color: var(--teal); }
+.phase-body { padding: 24px; }
+.phase-desc { color: var(--text-secondary); margin-bottom: 20px; font-size: 13px; line-height: 1.7; }
+.dependency-line { font-size: 11px; color: var(--text-secondary); padding: 4px 0 16px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 16px; font-family: 'Geist Mono', monospace; }
+.dep-tag { color: var(--amber); }
+.no-dep { color: var(--teal); }
+.task-section-label { font-family: 'Geist Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; margin-top: 20px; }
+.task-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(90, 85, 80, 0.1); }
+.task-item:last-child { border-bottom: none; }
+.task-checkbox { appearance: none; -webkit-appearance: none; width: 16px; height: 16px; border: 1.5px solid var(--border-visible); border-radius: 3px; background: transparent; cursor: pointer; position: relative; flex-shrink: 0; margin-top: 2px; }
+.task-checkbox:checked { background: var(--teal); border-color: var(--teal); }
+.task-checkbox:checked::after { content: ''; position: absolute; top: 2px; left: 5px; width: 4px; height: 8px; border: solid var(--bg); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.task-content { flex: 1; }
+.task-label { font-size: 13px; color: var(--text-primary); margin-bottom: 4px; }
+.task-item.completed .task-label { text-decoration: line-through; color: var(--text-muted); }
+.prompt-block { background: var(--bg); border: 1px solid var(--border-subtle); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.task-item.completed .prompt-block { opacity: 0.3; pointer-events: none; }
+.prompt-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--border-subtle); }
+.prompt-label { font-family: 'Geist Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+.copy-btn { background: none; border: 1px solid var(--border-visible); color: var(--text-secondary); font-family: 'Geist Mono', monospace; font-size: 9px; padding: 2px 8px; border-radius: 2px; cursor: pointer; letter-spacing: 0.1em; text-transform: uppercase; }
+.copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+.copy-btn.copied { color: var(--teal); border-color: var(--teal); }
+.prompt-text { padding: 12px; font-family: 'Geist Mono', monospace; font-size: 11px; line-height: 1.6; color: var(--text-secondary); white-space: pre-wrap; word-wrap: break-word; max-height: 200px; overflow-y: auto; }
+.parallel-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 16px 0; }
+.batch-column { border: 1px solid var(--border-subtle); border-radius: 4px; padding: 20px; background: var(--bg-elevated); position: relative; }
+.batch-column::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 4px 4px 0 0; }
+.batch-column.batch-a::before { background: var(--accent); }
+.batch-column.batch-b::before { background: var(--teal); }
+.batch-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 12px; font-family: 'Geist Mono', monospace; }
+.batch-column.batch-a .batch-label { color: var(--accent); }
+.batch-column.batch-b .batch-label { color: var(--teal); }
+.sync-point { text-align: center; padding: 12px 0; color: var(--text-muted); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; position: relative; font-family: 'Geist Mono', monospace; }
+.sync-point::before, .sync-point::after { content: ''; position: absolute; top: 50%; height: 1px; width: calc(50% - 80px); background: var(--border-subtle); }
+.sync-point::before { left: 0; }
+.sync-point::after { right: 0; }
+.verification { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle); }
+.verification-label { font-family: 'Geist Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
+.arch-diagram { background: var(--bg); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 32px; margin-bottom: 24px; overflow-x: auto; }
+.file-tree { font-family: 'Geist Mono', monospace; font-size: 12px; line-height: 1.8; color: var(--text-secondary); padding: 20px; background: var(--bg); border: 1px solid var(--border-subtle); border-radius: 4px; white-space: pre; }
+.file-tree .dir { color: var(--amber); }
+.file-tree .file { color: var(--text-secondary); }
+.file-tree .comment { color: var(--text-muted); font-style: italic; }
+.decision { padding: 16px 0; border-bottom: 1px solid var(--border-subtle); }
+.decision:last-child { border-bottom: none; }
+.decision-title { color: var(--accent); font-size: 13px; margin-bottom: 4px; }
+.decision-text { color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+.map-container { background: var(--bg); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 24px; overflow-x: auto; }
+.assessment-section { margin-bottom: 32px; }
+.assessment-item { padding: 12px 0; border-bottom: 1px solid rgba(90, 85, 80, 0.1); display: flex; gap: 12px; align-items: flex-start; }
+.assessment-item:last-child { border-bottom: none; }
+.severity { font-family: 'Geist Mono', monospace; font-size: 9px; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 2px; flex-shrink: 0; text-transform: uppercase; }
+.severity.high { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+.severity.medium { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+.assessment-text { font-size: 13px; color: var(--text-secondary); }
+.assessment-text strong { color: var(--text-primary); font-weight: 400; }
+.mitigation { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+.strength-item { padding: 8px 0; color: var(--text-secondary); font-size: 13px; display: flex; gap: 8px; align-items: flex-start; }
+.strength-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); flex-shrink: 0; margin-top: 6px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-visible); border-radius: 3px; }
+@media (max-width: 768px) { .header, .tabs, .tab-content { padding-left: 20px; padding-right: 20px; } h1 { font-size: 24px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } .parallel-group { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <div class="dot"></div>
+    <span class="header-label">Build Blueprint</span>
+  </div>
+  <h1>Parallax</h1>
+  <p class="subtitle">See the conversation you're actually having. Real-time conflict resolution for everyone.</p>
+  <div class="meta-row">
+    <div class="meta-item">HACKATHON <span>Claude Code Feb 10-16</span></div>
+    <div class="meta-item">BUILDER <span>Eddie Belaval (solo)</span></div>
+    <div class="meta-item">DEADLINE <span>Feb 16, 3:00 PM EST</span></div>
+    <div class="meta-item">PROBLEM <span>Break the Barriers</span></div>
+  </div>
+  <div class="progress-container">
+    <div class="progress-label"><span>BUILD PROGRESS</span><span id="progress-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="overview">Overview</button>
+  <button class="tab" data-tab="architecture">Architecture</button>
+  <button class="tab" data-tab="phases">Phases</button>
+  <button class="tab" data-tab="map">Parallel Map</button>
+  <button class="tab" data-tab="assessment">Assessment</button>
+</div>
+
+<!-- OVERVIEW -->
+<div class="tab-content active" id="tab-overview">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value" id="stat-phases">0/6</div><div class="stat-label">Phases Complete</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-tasks">0/30</div><div class="stat-label">Tasks Complete</div></div>
+    <div class="stat-card"><div class="stat-value">6</div><div class="stat-label">Days Remaining</div></div>
+    <div class="stat-card"><div class="stat-value">30%</div><div class="stat-label">Demo Weight</div></div>
+  </div>
+  <div class="badge-row">
+    <span class="badge">Next.js 16</span><span class="badge">TypeScript</span><span class="badge">Supabase</span><span class="badge">Opus 4.6</span><span class="badge">Web Speech API</span><span class="badge">Vercel</span><span class="badge">MIT License</span>
+  </div>
+  <div class="card">
+    <div class="section-header"><div class="dot"></div><h3>The Pitch</h3></div>
+    <p style="color:var(--text-secondary);line-height:1.8;">Professional mediation costs $300-500/hr. Therapy has month-long waitlists. NVC training takes years. <strong style="color:var(--text-primary);font-weight:400;">Parallax puts conflict resolution in everyone's hands.</strong> Two people, one shared screen, Opus 4.6 as invisible infrastructure — cleaning the signal from the noise between them. You don't talk TO the AI. You talk THROUGH it. The screen shows what you can't see: the subtext, the blind spots, the unmet needs hiding beneath the words. Watch "The Melt" transform raw emotion into clarity in real time.</p>
+  </div>
+  <div class="card">
+    <div class="section-header"><div class="dot"></div><h3>Demo Narrative (3 minutes)</h3></div>
+    <div style="font-family:'Geist Mono',monospace;font-size:12px;color:var(--text-secondary);line-height:2;">
+      <div><span style="color:var(--accent);">0:00</span> — "Have you ever said something and gotten a completely unexpected reaction?"</div>
+      <div><span style="color:var(--accent);">0:15</span> — Two people start a real disagreement on screen</div>
+      <div><span style="color:var(--accent);">0:45</span> — Toggle subtext layer. See what's REALLY being said. Room goes quiet.</div>
+      <div><span style="color:var(--accent);">1:30</span> — Blind spots light up. "She thinks he's dismissing her. He thinks he's being helpful."</div>
+      <div><span style="color:var(--accent);">2:15</span> — Opus bridges the gap. Signal lines straighten. The Melt happens.</div>
+      <div><span style="color:var(--accent);">2:45</span> — "This is Parallax. See the conversation you're actually having."</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-header"><div class="dot"></div><h3>Judging Strategy</h3></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+      <div><div style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:4px;">DEMO (30%)</div><div style="font-size:12px;color:var(--text-secondary);">The Melt animation + live voice input + real conflict = unforgettable 3 minutes</div></div>
+      <div><div style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:4px;">IMPACT (25%)</div><div style="font-size:12px;color:var(--text-secondary);">Democratizes $300-500/hr mediation. Universal need.</div></div>
+      <div><div style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:4px;">OPUS 4.6 USE (25%)</div><div style="font-size:12px;color:var(--text-secondary);">Emotional intelligence, multi-perspective reasoning, calibrated NVC coaching.</div></div>
+      <div><div style="font-family:'Geist Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:0.1em;margin-bottom:4px;">DEPTH (20%)</div><div style="font-size:12px;color:var(--text-secondary);">Voice pipeline + real-time visualization + NVC framework = genuine craft.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ARCHITECTURE -->
+<div class="tab-content" id="tab-architecture">
+  <div class="section-header"><div class="dot"></div><h2>System Architecture</h2></div>
+  <div class="arch-diagram">
+    <svg viewBox="0 0 800 420" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;">
+      <circle cx="100" cy="80" r="35" stroke="#ef6f2e" stroke-width="1.5" fill="rgba(239,111,46,0.08)"/>
+      <text x="100" y="76" text-anchor="middle" fill="#ef6f2e" font-family="monospace" font-size="10">PERSON</text>
+      <text x="100" y="90" text-anchor="middle" fill="#ef6f2e" font-family="monospace" font-size="12" font-weight="600">A</text>
+      <circle cx="700" cy="80" r="35" stroke="#4ecdc4" stroke-width="1.5" fill="rgba(78,205,196,0.08)"/>
+      <text x="700" y="76" text-anchor="middle" fill="#4ecdc4" font-family="monospace" font-size="10">PERSON</text>
+      <text x="700" y="90" text-anchor="middle" fill="#4ecdc4" font-family="monospace" font-size="12" font-weight="600">B</text>
+      <rect x="250" y="45" width="300" height="70" rx="4" stroke="rgba(90,85,80,0.5)" stroke-width="1.5" fill="rgba(15,14,13,0.8)"/>
+      <text x="400" y="72" text-anchor="middle" fill="#eeeeee" font-family="monospace" font-size="11">SHARED SCREEN</text>
+      <text x="400" y="90" text-anchor="middle" fill="#605850" font-family="monospace" font-size="9">SINGLE COLUMN / TEMPERATURE CARDS</text>
+      <line x1="135" y1="80" x2="245" y2="80" stroke="#ef6f2e" stroke-width="1" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" values="8;0" dur="1s" repeatCount="indefinite"/></line>
+      <line x1="555" y1="80" x2="665" y2="80" stroke="#4ecdc4" stroke-width="1" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" values="8;0" dur="1s" repeatCount="indefinite"/></line>
+      <text x="190" y="72" text-anchor="middle" fill="#605850" font-family="monospace" font-size="8">VOICE/TYPE</text>
+      <text x="610" y="72" text-anchor="middle" fill="#605850" font-family="monospace" font-size="8">VOICE/TYPE</text>
+      <rect x="200" y="160" width="400" height="60" rx="4" stroke="rgba(90,85,80,0.5)" stroke-width="1.5" fill="rgba(15,14,13,0.8)"/>
+      <text x="400" y="185" text-anchor="middle" fill="#eeeeee" font-family="monospace" font-size="11">NEXT.JS 16 APP</text>
+      <text x="400" y="200" text-anchor="middle" fill="#605850" font-family="monospace" font-size="9">WEB SPEECH API + REACT + THE MELT UI</text>
+      <line x1="400" y1="115" x2="400" y2="155" stroke="rgba(90,85,80,0.5)" stroke-width="1" stroke-dasharray="4 4"/>
+      <rect x="280" y="260" width="240" height="50" rx="4" stroke="#ef6f2e" stroke-width="1.5" fill="rgba(239,111,46,0.05)"/>
+      <text x="400" y="282" text-anchor="middle" fill="#ef6f2e" font-family="monospace" font-size="10">/API/MEDIATE</text>
+      <text x="400" y="296" text-anchor="middle" fill="#605850" font-family="monospace" font-size="8">STREAMING RESPONSE</text>
+      <line x1="400" y1="220" x2="400" y2="255" stroke="rgba(90,85,80,0.5)" stroke-width="1" stroke-dasharray="4 4"/>
+      <rect x="140" y="350" width="200" height="50" rx="4" stroke="#f59e0b" stroke-width="1.5" fill="rgba(245,158,11,0.05)"/>
+      <text x="240" y="372" text-anchor="middle" fill="#f59e0b" font-family="monospace" font-size="10">CLAUDE OPUS 4.6</text>
+      <text x="240" y="386" text-anchor="middle" fill="#605850" font-family="monospace" font-size="8">NVC + SUBTEXT + BLIND SPOTS</text>
+      <rect x="460" y="350" width="200" height="50" rx="4" stroke="#4ecdc4" stroke-width="1.5" fill="rgba(78,205,196,0.05)"/>
+      <text x="560" y="372" text-anchor="middle" fill="#4ecdc4" font-family="monospace" font-size="10">SUPABASE</text>
+      <text x="560" y="386" text-anchor="middle" fill="#605850" font-family="monospace" font-size="8">REALTIME + SESSIONS + MESSAGES</text>
+      <line x1="360" y1="310" x2="270" y2="345" stroke="rgba(245,158,11,0.4)" stroke-width="1" stroke-dasharray="4 4"/>
+      <line x1="440" y1="310" x2="530" y2="345" stroke="rgba(78,205,196,0.4)" stroke-width="1" stroke-dasharray="4 4"/>
+    </svg>
+  </div>
+  <div class="section-header" style="margin-top:32px;"><div class="dot"></div><h3>Data Model</h3></div>
+  <div class="card">
+    <div style="font-family:'Geist Mono',monospace;font-size:12px;color:var(--text-secondary);line-height:1.8;">
+      <div style="color:var(--amber);margin-bottom:8px;">-- sessions</div>
+      <div>  id: uuid (PK)</div><div>  room_code: text (unique, 6 chars)</div><div>  person_a_name: text</div><div>  person_b_name: text</div>
+      <div>  status: text ('waiting' | 'active' | 'completed')</div><div>  temperature: integer (0-100)</div><div>  created_at: timestamptz</div>
+      <div style="height:16px;"></div>
+      <div style="color:var(--teal);margin-bottom:8px;">-- messages</div>
+      <div>  id: uuid (PK)</div><div>  session_id: uuid (FK)</div><div>  speaker: text ('a' | 'b')</div><div>  raw_text: text</div>
+      <div>  subtext: text</div><div>  blind_spots: text[]</div><div>  unmet_needs: text[]</div><div>  nvc_translation: text</div>
+      <div>  emotional_temperature: integer (0-100)</div><div>  sequence: integer</div><div>  created_at: timestamptz</div>
+    </div>
+  </div>
+  <div class="section-header" style="margin-top:32px;"><div class="dot"></div><h3>File Structure</h3></div>
+  <div class="file-tree"><span class="dir">parallax/</span>
+<span class="dir">  src/app/</span>
+<span class="file">    layout.tsx</span>              <span class="comment">-- Root layout, factory theme, Geist fonts</span>
+<span class="file">    page.tsx</span>                <span class="comment">-- Landing: create or join session</span>
+<span class="dir">    session/[code]/</span>
+<span class="file">      page.tsx</span>              <span class="comment">-- Main mediation interface</span>
+<span class="dir">    api/mediate/</span>
+<span class="file">      route.ts</span>              <span class="comment">-- Opus 4.6 streaming endpoint</span>
+<span class="dir">  src/components/</span>
+<span class="file">    MessageCard.tsx</span>         <span class="comment">-- Raw + Melt + clarity card</span>
+<span class="file">    MeltAnimation.tsx</span>       <span class="comment">-- CSS/SVG noise-to-clarity</span>
+<span class="file">    SignalRail.tsx</span>          <span class="comment">-- Side temperature gradient</span>
+<span class="file">    VoiceInput.tsx</span>          <span class="comment">-- Web Speech API mic</span>
+<span class="file">    TurnIndicator.tsx</span>       <span class="comment">-- Whose turn + speaker ID</span>
+<span class="file">    SessionLobby.tsx</span>        <span class="comment">-- Waiting room</span>
+<span class="dir">  src/lib/</span>
+<span class="file">    supabase.ts</span>             <span class="comment">-- Supabase client</span>
+<span class="file">    opus.ts</span>                 <span class="comment">-- Opus 4.6 wrapper + streaming</span>
+<span class="file">    prompts.ts</span>              <span class="comment">-- NVC system prompt + templates</span>
+<span class="file">    types.ts</span>                <span class="comment">-- TypeScript interfaces</span>
+<span class="dir">  src/styles/</span>
+<span class="file">    globals.css</span>             <span class="comment">-- Factory design tokens</span>
+<span class="file">    melt.css</span>                <span class="comment">-- Melt animation keyframes</span>
+<span class="dir">  supabase/migrations/</span>
+<span class="file">    001_initial.sql</span>         <span class="comment">-- Sessions + messages + RLS</span>
+<span class="file">  .env.example</span>  <span class="file">LICENSE (MIT)</span>  <span class="file">README.md</span></div>
+  <div class="section-header" style="margin-top:32px;"><div class="dot"></div><h3>Key Decisions</h3></div>
+  <div class="card">
+    <div class="decision"><div class="decision-title">Single Opus call per message</div><div class="decision-text">One call extracts subtext + blind spots + needs + NVC translation. Lower latency, lower cost, simpler architecture.</div></div>
+    <div class="decision"><div class="decision-title">Web Speech API over Deepgram/Whisper</div><div class="decision-text">Browser-native, zero cost, no backend WebSocket. Chrome-first for demo. Falls back to text input.</div></div>
+    <div class="decision"><div class="decision-title">Supabase Realtime for session sync</div><div class="decision-text">Both people subscribe to same channel. Updates appear instantly via Realtime. No polling.</div></div>
+    <div class="decision"><div class="decision-title">CSS animations for The Melt</div><div class="decision-text">Pure CSS keyframes + SVG. No Framer Motion, no GSAP. Small bundle, smooth performance.</div></div>
+    <div class="decision"><div class="decision-title">Co-located setup (same room, shared screen)</div><div class="decision-text">They HEAR each other. The screen is the X-ray, not the communication channel. Simplifies architecture.</div></div>
+  </div>
+</div>
+
+<!-- PHASES -->
+<div class="tab-content" id="tab-phases">
+
+  <!-- P1 -->
+  <div class="phase-card">
+    <div class="phase-header"><div><div class="phase-title"><span class="phase-num">P1</span>Foundation</div><div class="phase-day">Tuesday, Feb 11 (Day 1)</div></div><span class="phase-badge not-started" data-phase="p1">Not Started</span></div>
+    <div class="phase-body">
+      <div class="dependency-line"><span class="no-dep">No dependencies — start immediately</span></div>
+      <p class="phase-desc">Stand up the project from scratch. Next.js app with factory theme, Supabase schema, session creation, turn-based text input. By end of day: two people can join a room and exchange messages.</p>
+      <div class="task-section-label">Sequential Tasks</div>
+      <div class="task-item" id="task-p1-t1"><input type="checkbox" class="task-checkbox" data-key="p1-t1"><div class="task-content"><div class="task-label">Create Next.js 16 project with TypeScript + factory design system</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Create a new Next.js 16 project called "parallax" at ~/Development/parallax.
+
+npx create-next-app@latest parallax --typescript --tailwind --eslint --app --src-dir
+
+Replace default styles with factory design system:
+- Background: #020202, Text: #eeeeee, Accent: #ef6f2e, Amber: #f59e0b, Teal: #4ecdc4
+- Warm grays (brownish, not cool/blue), borders rgba(90,85,80,0.25)
+- Geist + Geist Mono fonts (next/font), headings weight 400, tight letter-spacing
+- NO shadows, NO gradients, NO glow
+
+Root layout.tsx: factory theme, metadata "Parallax — See the conversation you're actually having"
+Landing page.tsx: Parallax title + "Start Session" button
+
+Verify: npm run build succeeds, dev server shows themed page.</div></div></div></div>
+      <div class="task-item" id="task-p1-t2"><input type="checkbox" class="task-checkbox" data-key="p1-t2"><div class="task-content"><div class="task-label">Set up Supabase project and database schema</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Set up Supabase for ~/Development/parallax.
+
+Create supabase/migrations/001_initial.sql with sessions table (id, room_code, person_a_name, person_b_name, status, temperature, created_at) and messages table (id, session_id FK, speaker, raw_text, subtext, blind_spots text[], unmet_needs text[], nvc_translation, emotional_temperature, sequence, created_at).
+
+Enable Realtime on both tables. Add permissive RLS policies for hackathon.
+
+Install @supabase/supabase-js. Create src/lib/supabase.ts with browser client.
+Create .env.example with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.
+
+Verify: Migration runs, tables visible in Supabase dashboard.</div></div></div></div>
+      <div class="task-item" id="task-p1-t3"><input type="checkbox" class="task-checkbox" data-key="p1-t3"><div class="task-content"><div class="task-label">Session creation + join flow + lobby</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Build session flow in ~/Development/parallax.
+
+Landing page (src/app/page.tsx): centered, max-width 480px. "Start Session" generates 6-char room code, inserts session, redirects to /session/[code]. "Join Session" input validates code exists, redirects.
+
+Session page (src/app/session/[code]/page.tsx): fetch session by room_code. 404 if not found. Show room code large for sharing. If status='waiting', show lobby. When second person arrives, set status='active'. Name defaults: "Person A" / "Person B".
+
+Create src/lib/types.ts with Session and Message interfaces.
+
+Verify: Create session, see code, open second tab with code, both see session.</div></div></div></div>
+      <div class="task-item" id="task-p1-t4"><input type="checkbox" class="task-checkbox" data-key="p1-t4"><div class="task-content"><div class="task-label">Turn-based text input with Supabase Realtime</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Build turn-based messaging in ~/Development/parallax session page.
+
+Fixed text input at bottom. Shows whose turn it is. Only active speaker can submit. Turns alternate A-B-A-B.
+
+On submit: insert message to Supabase with speaker, raw_text, sequence. Display in single-column feed. Subscribe to Realtime INSERT events filtered by session_id. Both views update instantly.
+
+Message cards: centered max-width 600px, speaker name above, Person A = subtle orange left accent, Person B = teal accent. Auto-scroll to newest.
+
+Verify: Two tabs, alternate messages, both see real-time updates.</div></div></div></div>
+      <div class="verification"><div class="verification-label">Phase 1 Verification</div><div class="task-item" id="task-p1-v"><input type="checkbox" class="task-checkbox" data-key="p1-v"><div class="task-content"><div class="task-label">Two people can create/join a session and exchange messages in real-time</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- P2 -->
+  <div class="phase-card">
+    <div class="phase-header"><div><div class="phase-title"><span class="phase-num">P2</span>Opus Mediation Engine</div><div class="phase-day">Wednesday, Feb 12 (Day 2)</div></div><span class="phase-badge not-started" data-phase="p2">Not Started</span></div>
+    <div class="phase-body">
+      <div class="dependency-line">Requires: <span class="dep-tag">Phase 1</span></div>
+      <p class="phase-desc">The brain. Build the Opus 4.6 integration that analyzes each message for subtext, blind spots, unmet needs, and NVC translations. Prompt quality determines everything.</p>
+      <div class="task-section-label">Sequential Tasks</div>
+      <div class="task-item" id="task-p2-t1"><input type="checkbox" class="task-checkbox" data-key="p2-t1"><div class="task-content"><div class="task-label">NVC analysis system prompt engineering</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Create src/lib/prompts.ts in ~/Development/parallax. MOST IMPORTANT FILE.
+
+System prompt for Opus 4.6 that receives full conversation history + latest message and returns JSON:
+- subtext: what speaker actually means (1-2 sentences)
+- blind_spots: what speaker can't see about their communication (1-3 items)
+- unmet_needs: core emotional needs using NVC vocabulary (connection, autonomy, safety, etc.)
+- nvc_translation: NVC reframe — "When I hear X, I feel Y, because I need Z. Would you be willing to..."
+- emotional_temperature: 0-100 (0=calm, 100=heated)
+
+Prompt should: use Marshall Rosenberg NVC framework, identify defensive patterns/absolutes/blame, recognize bids for connection inside complaints, account for full conversation context.
+
+Export: getSystemPrompt() and buildUserMessage(history, latestMessage).
+
+Test with a real conflict: couple arguing about household chores. Verify all 5 JSON fields are populated and emotionally intelligent.</div></div></div></div>
+      <div class="task-item" id="task-p2-t2"><input type="checkbox" class="task-checkbox" data-key="p2-t2"><div class="task-content"><div class="task-label">API route: /api/mediate with streaming</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Create src/app/api/mediate/route.ts in ~/Development/parallax.
+
+POST endpoint: receives session_id, message_id, raw_text, speaker, conversation_history.
+Calls claude-opus-4-6 via @anthropic-ai/sdk with streaming using prompts from src/lib/prompts.ts.
+
+On completion: parse JSON response, update Supabase message row with subtext, blind_spots, unmet_needs, nvc_translation, emotional_temperature. Update session temperature (running average).
+
+Create src/lib/opus.ts: thin wrapper, ANTHROPIC_API_KEY env var, analyzeMessage() export, graceful error handling.
+
+Verify: curl endpoint with test message, see streaming response, check Supabase row updated.</div></div></div></div>
+      <div class="task-item" id="task-p2-t3"><input type="checkbox" class="task-checkbox" data-key="p2-t3"><div class="task-content"><div class="task-label">Wire Opus into message flow + Realtime updates</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Connect Opus to message submission in ~/Development/parallax session page.
+
+On submit: insert raw message immediately (user sees words), call /api/mediate in background, show processing indicator (pulsing dot). When analysis returns, update message card.
+
+Subscribe to Realtime UPDATE events on messages (not just INSERT) so both browsers see analysis populate.
+
+Handle loading: subtle indicator during 2-4s Opus thinking. On API failure: show raw message without analysis (graceful degradation).
+
+Verify: Submit message, appears instantly, analysis populates after 2-4s, other tab sees same.</div></div></div></div>
+      <div class="verification"><div class="verification-label">Phase 2 Verification</div><div class="task-item" id="task-p2-v"><input type="checkbox" class="task-checkbox" data-key="p2-v"><div class="task-content"><div class="task-label">Messages analyzed by Opus with subtext, blind spots, needs, NVC translation visible to both users</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- P3 -->
+  <div class="phase-card">
+    <div class="phase-header"><div><div class="phase-title"><span class="phase-num">P3</span>The Melt — Visual Transformation</div><div class="phase-day">Thursday, Feb 13 (Day 3)</div></div><span class="phase-badge not-started" data-phase="p3">Not Started</span></div>
+    <div class="phase-body">
+      <div class="dependency-line">Requires: <span class="dep-tag">Phase 2</span></div>
+      <p class="phase-desc">The visual soul. Transform plain analysis into Temperature Cards: warm auras dissolving into cool clarity. This is what makes the demo unforgettable.</p>
+      <div class="task-section-label">Sequential (Foundation)</div>
+      <div class="task-item" id="task-p3-t1"><input type="checkbox" class="task-checkbox" data-key="p3-t1"><div class="task-content"><div class="task-label">Temperature color system + MessageCard redesign</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Build MessageCard component in ~/Development/parallax.
+
+src/components/MessageCard.tsx: two states — RAW (warm aura) and CLARITY (cool aura).
+Temperature color map: 80-100=#ef4444, 50-79=#ef6f2e, 20-49=#f59e0b, 0-19=#4ecdc4.
+RAW: 4px left border + subtle background tint matching temperature.
+CLARITY: teal border, NVC translation prominent, blind spots as tags, needs as pills.
+Raw text stays visible but dimmed above clarity text.
+
+Utility in src/lib/types.ts: getTemperatureColor(temp), getTemperatureLabel(temp).
+
+Verify: Messages display with temperature-colored borders. Different temps = different colors.</div></div></div></div>
+      <div class="task-section-label">Parallel Batch</div>
+      <div class="parallel-group">
+        <div class="batch-column batch-a"><div class="batch-label">Batch A: The Melt Animation</div>
+          <div class="task-item" id="task-p3-t2"><input type="checkbox" class="task-checkbox" data-key="p3-t2"><div class="task-content"><div class="task-label">Melt animation: noise dissolve + clarity crystallize</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Build The Melt in ~/Development/parallax. src/components/MeltAnimation.tsx + src/styles/melt.css.
+
+Three phases:
+1. Noise (0-500ms): warm-colored particle dots appear around raw message, vibrate with CSS jitter
+2. Melt (500-1500ms): particles scatter outward + fade, raw text dims, warm aura transitions to teal
+3. Crystallize (1500-2500ms): NVC translation fades in from below, blind spot tags appear staggered (100ms apart), needs pills appear, teal aura settles, border pulse signals completion
+
+ALL CSS @keyframes with animation-delay for staggering. No JS animation libraries. Total ~2.5 seconds.
+
+Verify: Trigger Melt on a card. Should feel organic, not mechanical.</div></div></div></div>
+        </div>
+        <div class="batch-column batch-b"><div class="batch-label">Batch B: Signal Rail</div>
+          <div class="task-item" id="task-p3-t3"><input type="checkbox" class="task-checkbox" data-key="p3-t3"><div class="task-content"><div class="task-label">Signal Rail: conversation temperature sidebar</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Build SignalRail in ~/Development/parallax. src/components/SignalRail.tsx.
+
+Fixed right side, full height, 4px wide. Gradient bottom-to-top = conversation timeline. Color at each point = message emotional_temperature. Current overall temp as a dot.
+
+Updates in real-time as messages arrive. Smooth CSS transition on color changes. Tooltip on hover shows message preview + temp.
+
+All warm = warm glow. Mixed = visible gradient. All cool = teal. Like a heart rate monitor for conversation.
+
+Verify: Several messages with varying temps. Rail shows gradient matching emotional arc.</div></div></div></div>
+        </div>
+      </div>
+      <div class="sync-point">Sync before verification</div>
+      <div class="verification"><div class="verification-label">Phase 3 Verification</div><div class="task-item" id="task-p3-v"><input type="checkbox" class="task-checkbox" data-key="p3-v"><div class="task-content"><div class="task-label">The Melt plays when analysis arrives. Signal Rail shows temperature. Visual experience is compelling.</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- P4 -->
+  <div class="phase-card">
+    <div class="phase-header"><div><div class="phase-title"><span class="phase-num">P4</span>Voice Input + Full Flow</div><div class="phase-day">Friday, Feb 14 (Day 4)</div></div><span class="phase-badge not-started" data-phase="p4">Not Started</span></div>
+    <div class="phase-body">
+      <div class="dependency-line">Requires: <span class="dep-tag">Phase 3</span></div>
+      <p class="phase-desc">Add voice input. Both people speak naturally, words appear on screen, then The Melt transforms them. Polish the full flow.</p>
+      <div class="task-section-label">Sequential Tasks</div>
+      <div class="task-item" id="task-p4-t1"><input type="checkbox" class="task-checkbox" data-key="p4-t1"><div class="task-content"><div class="task-label">Web Speech API voice input component</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Build VoiceInput in ~/Development/parallax. src/components/VoiceInput.tsx.
+
+Mic button: idle (mic icon), recording (pulsing orange dot), processing (pulsing teal).
+Use webkitSpeechRecognition with SpeechRecognition fallback. continuous: false, interimResults: true, lang: 'en-US'.
+
+Real-time transcription: words appear in text input as spoken. Interim = lighter color, final = full. Auto-submit on speech end (or Enter to confirm).
+
+Speaker colors: orange recording dot for A, teal for B. Mic active only for current speaker.
+
+Fallback: no Web Speech = text only. Mic denied = helpful message + text fallback. Handle no-speech and network errors.
+
+Verify: Click mic, speak, words appear live, auto-submits. Works in Chrome.</div></div></div></div>
+      <div class="task-item" id="task-p4-t2"><input type="checkbox" class="task-checkbox" data-key="p4-t2"><div class="task-content"><div class="task-label">End-to-end flow polish + session management</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Polish full flow in ~/Development/parallax session page.
+
+Session header: room code, names with colors, temperature indicator, "End Session" button.
+Turn flow: clear visual for whose turn, disable input during Opus processing, re-enable for other person.
+Both voice and text input (mic button + text field side by side).
+Smooth auto-scroll. First message gets "conversation started" indicator.
+
+Session completion: "End Session" triggers final Opus summary call — overall temperature arc, key blind spots revealed, core unmet needs per person.
+
+Room sharing: lobby shows code LARGE + "share this code" instruction + copy link button.
+
+Verify: Full conversation — create, join, alternate voice/text, see Melts, end session, see summary.</div></div></div></div>
+      <div class="verification"><div class="verification-label">Phase 4 Verification</div><div class="task-item" id="task-p4-v"><input type="checkbox" class="task-checkbox" data-key="p4-v"><div class="task-content"><div class="task-label">Voice-enabled mediation works end-to-end with summary</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- P5 -->
+  <div class="phase-card">
+    <div class="phase-header"><div><div class="phase-title"><span class="phase-num">P5</span>Polish + Edge Cases</div><div class="phase-day">Saturday, Feb 15 (Day 5)</div></div><span class="phase-badge not-started" data-phase="p5">Not Started</span></div>
+    <div class="phase-body">
+      <div class="dependency-line">Requires: <span class="dep-tag">Phase 4</span></div>
+      <p class="phase-desc">Everything works. Make it bulletproof and beautiful. This is where "good hack" becomes "genuine craft."</p>
+      <div class="task-section-label">Parallel Batch</div>
+      <div class="parallel-group">
+        <div class="batch-column batch-a"><div class="batch-label">Batch A: Visual Polish</div>
+          <div class="task-item" id="task-p5-t1"><input type="checkbox" class="task-checkbox" data-key="p5-t1"><div class="task-content"><div class="task-label">Refine Melt animation timing and feel</div></div></div>
+          <div class="task-item" id="task-p5-t2"><input type="checkbox" class="task-checkbox" data-key="p5-t2"><div class="task-content"><div class="task-label">Landing page — compelling first impression</div></div></div>
+          <div class="task-item" id="task-p5-t3"><input type="checkbox" class="task-checkbox" data-key="p5-t3"><div class="task-content"><div class="task-label">Mobile/tablet responsive layout</div></div></div>
+        </div>
+        <div class="batch-column batch-b"><div class="batch-label">Batch B: Robustness</div>
+          <div class="task-item" id="task-p5-t4"><input type="checkbox" class="task-checkbox" data-key="p5-t4"><div class="task-content"><div class="task-label">Error handling: API failures, disconnections</div></div></div>
+          <div class="task-item" id="task-p5-t5"><input type="checkbox" class="task-checkbox" data-key="p5-t5"><div class="task-content"><div class="task-label">Voice input edge cases</div></div></div>
+          <div class="task-item" id="task-p5-t6"><input type="checkbox" class="task-checkbox" data-key="p5-t6"><div class="task-content"><div class="task-label">Deploy to Vercel + test production</div></div></div>
+        </div>
+      </div>
+      <div class="sync-point">Sync before verification</div>
+      <div class="verification"><div class="verification-label">Phase 5 Verification</div><div class="task-item" id="task-p5-v"><input type="checkbox" class="task-checkbox" data-key="p5-v"><div class="task-content"><div class="task-label">Deployed, polished, handles errors gracefully, looks stunning</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- P6 -->
+  <div class="phase-card">
+    <div class="phase-header"><div><div class="phase-title"><span class="phase-num">P6</span>Demo + Submission</div><div class="phase-day">Sunday, Feb 16 (Day 6)</div></div><span class="phase-badge not-started" data-phase="p6">Not Started</span></div>
+    <div class="phase-body">
+      <div class="dependency-line">Requires: <span class="dep-tag">Phase 5</span></div>
+      <p class="phase-desc">Demo is 30% of judging. Script it, rehearse it, record it. Clean repo, open source, submit. Deadline: 3:00 PM EST.</p>
+      <div class="task-section-label">Sequential Tasks</div>
+      <div class="task-item" id="task-p6-t1"><input type="checkbox" class="task-checkbox" data-key="p6-t1"><div class="task-content"><div class="task-label">Demo video script + storyboard</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Write 3-minute demo script for Parallax.
+
+0:00-0:15 Hook: "Have you ever said something and gotten a completely unexpected reaction?"
+0:15-0:30 Problem: Mediation costs $300-500/hr. The barrier isn't willingness, it's access.
+0:30-0:45 Intro: "Parallax lets two people see the conversation they're actually having."
+0:45-2:30 Live demo: real conflict, voice input, watch The Melt, signal rail, blind spots
+2:30-2:45 Session summary showing emotional arc
+2:45-3:00 Close: "Built with Opus 4.6 in 6 days. Open source."
+
+Conflict scenario: relatable, not heavy (roommates/chores, co-founders/priorities, vacation planning).</div></div></div></div>
+      <div class="task-item" id="task-p6-t2"><input type="checkbox" class="task-checkbox" data-key="p6-t2"><div class="task-content"><div class="task-label">Record and edit 3-minute demo video</div></div></div>
+      <div class="task-item" id="task-p6-t3"><input type="checkbox" class="task-checkbox" data-key="p6-t3"><div class="task-content"><div class="task-label">README.md with setup instructions + architecture</div><div class="prompt-block"><div class="prompt-header"><span class="prompt-label">Prompt</span><button class="copy-btn" onclick="copyPrompt(this)">Copy</button></div><div class="prompt-text">Write README.md for ~/Development/parallax.
+
+Name + one-liner. Problem (mediation cost). Solution (Parallax). How it works (3-4 steps). Screenshot placeholder. Tech stack badges. Setup: clone, install, env vars, run. Architecture overview. Built for Claude Code Hackathon. MIT License. Author: Eddie Belaval / id8Labs.</div></div></div></div>
+      <div class="task-item" id="task-p6-t4"><input type="checkbox" class="task-checkbox" data-key="p6-t4"><div class="task-content"><div class="task-label">Open source: LICENSE (MIT), .env.example, .gitignore</div></div></div>
+      <div class="task-item" id="task-p6-t5"><input type="checkbox" class="task-checkbox" data-key="p6-t5"><div class="task-content"><div class="task-label">100-200 word submission summary</div></div></div>
+      <div class="task-item" id="task-p6-t6"><input type="checkbox" class="task-checkbox" data-key="p6-t6"><div class="task-content"><div class="task-label">Submit to hackathon platform before 3:00 PM EST</div></div></div>
+      <div class="verification"><div class="verification-label">Phase 6 Verification</div><div class="task-item" id="task-p6-v"><input type="checkbox" class="task-checkbox" data-key="p6-v"><div class="task-content"><div class="task-label">Demo uploaded, repo public, submission complete</div></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PARALLEL MAP -->
+<div class="tab-content" id="tab-map">
+  <div class="section-header"><div class="dot"></div><h2>Dependency Map</h2></div>
+  <p style="color:var(--text-muted);font-size:12px;margin-bottom:20px;">Hover phases to trace dependencies. Amber = upstream. Teal = downstream.</p>
+  <div class="map-container">
+    <svg id="parallel-map-svg" viewBox="0 0 700 680" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
+
+<!-- ASSESSMENT -->
+<div class="tab-content" id="tab-assessment">
+  <div class="section-header"><div class="dot"></div><h2>Strengths</h2></div>
+  <div class="card assessment-section">
+    <div class="strength-item"><div class="strength-dot"></div><div>Deep NVC domain expertise from Pause V1 — product intuition already there</div></div>
+    <div class="strength-item"><div class="strength-dot"></div><div>Voice pipeline experience from Vox (whisper.cpp) and HYDRA (Telegram voice)</div></div>
+    <div class="strength-item"><div class="strength-dot"></div><div>Factory design system fully defined — zero design decisions, just execute</div></div>
+    <div class="strength-item"><div class="strength-dot"></div><div>Solo builder = zero coordination overhead</div></div>
+    <div class="strength-item"><div class="strength-dot"></div><div>Opus 4.6 emotional intelligence is a genuine differentiator</div></div>
+    <div class="strength-item"><div class="strength-dot"></div><div>The Melt animation already conceptualized — unique visual signature</div></div>
+  </div>
+  <div class="section-header" style="margin-top:32px;"><div class="dot" style="background:var(--red);"></div><h2>Risks</h2></div>
+  <div class="card assessment-section">
+    <div class="assessment-item"><span class="severity high">HIGH</span><div><div class="assessment-text"><strong>Opus API latency (2-4s)</strong> could break real-time feel</div><div class="mitigation">Melt animation masks latency. Streaming shows partial results early.</div></div></div>
+    <div class="assessment-item"><span class="severity high">HIGH</span><div><div class="assessment-text"><strong>NVC prompt quality determines entire product.</strong> Bad analysis = bad product.</div><div class="mitigation">Dedicate Day 2 to prompt engineering. Test 5+ real conflict scenarios.</div></div></div>
+    <div class="assessment-item"><span class="severity high">HIGH</span><div><div class="assessment-text"><strong>Melt animation complexity</strong> could eat core feature time</div><div class="mitigation">Start with simple fade. Layer particles only after core flow works.</div></div></div>
+    <div class="assessment-item"><span class="severity medium">MED</span><div><div class="assessment-text"><strong>Web Speech API Chrome-only,</strong> accuracy varies</div><div class="mitigation">Demo uses Chrome. Text input fallback. Sufficient for hackathon.</div></div></div>
+    <div class="assessment-item"><span class="severity medium">MED</span><div><div class="assessment-text"><strong>Demo video quality</strong> — 30% of judging</div><div class="mitigation">Full Day 6 reserved. Script + rehearse. Get second person for demo.</div></div></div>
+  </div>
+  <div class="section-header" style="margin-top:32px;"><div class="dot" style="background:var(--amber);"></div><h2>High-Impact Optimizations</h2></div>
+  <div class="card assessment-section">
+    <div class="assessment-item"><span class="severity" style="background:rgba(239,111,46,0.15);color:var(--accent);">OPT</span><div><div class="assessment-text"><strong>Single Opus call per message</strong> — one call extracts everything. Don't multi-pass.</div></div></div>
+    <div class="assessment-item"><span class="severity" style="background:rgba(239,111,46,0.15);color:var(--accent);">OPT</span><div><div class="assessment-text"><strong>CSS-only animations</strong> — no libraries. Tiny bundle, smooth perf.</div></div></div>
+    <div class="assessment-item"><span class="severity" style="background:rgba(239,111,46,0.15);color:var(--accent);">OPT</span><div><div class="assessment-text"><strong>Use the demo as the test</strong> — every test run IS a rehearsal.</div></div></div>
+    <div class="assessment-item"><span class="severity" style="background:rgba(239,111,46,0.15);color:var(--accent);">OPT</span><div><div class="assessment-text"><strong>Deploy Day 1</strong> — push to Vercel immediately. Catch hosting issues early.</div></div></div>
+  </div>
+</div>
+
+<!-- DATA MODEL -->
+<script type="application/json" id="blueprint-data">
+{"project":"parallax","title":"Parallax Build Plan","generated":"2026-02-10T17:00:00Z","scale":"full-product","deadline":"2026-02-16T20:00:00Z","stack":["Next.js 16","TypeScript","Supabase","Claude Opus 4.6","Web Speech API","Vercel"],"phases":[{"id":"p1","name":"Foundation","day":"Tuesday (Day 1)","status":"not_started","deps":[],"sequential":[{"id":"p1-t1","title":"Create Next.js 16 project","done":false},{"id":"p1-t2","title":"Supabase schema","done":false},{"id":"p1-t3","title":"Session flow + lobby","done":false},{"id":"p1-t4","title":"Turn-based text input","done":false}],"batches":[],"verification":{"id":"p1-v","done":false}},{"id":"p2","name":"Opus Mediation Engine","day":"Wednesday (Day 2)","status":"not_started","deps":["p1"],"sequential":[{"id":"p2-t1","title":"NVC prompt engineering","done":false},{"id":"p2-t2","title":"/api/mediate streaming","done":false},{"id":"p2-t3","title":"Wire Opus into flow","done":false}],"batches":[],"verification":{"id":"p2-v","done":false}},{"id":"p3","name":"The Melt","day":"Thursday (Day 3)","status":"not_started","deps":["p2"],"sequential":[{"id":"p3-t1","title":"Temperature colors + MessageCard","done":false}],"batches":[{"id":"p3-ba","label":"Batch A","tasks":[{"id":"p3-t2","title":"Melt animation","done":false}]},{"id":"p3-bb","label":"Batch B","tasks":[{"id":"p3-t3","title":"Signal Rail","done":false}]}],"verification":{"id":"p3-v","done":false}},{"id":"p4","name":"Voice + Full Flow","day":"Friday (Day 4)","status":"not_started","deps":["p3"],"sequential":[{"id":"p4-t1","title":"Web Speech API","done":false},{"id":"p4-t2","title":"E2E polish + session mgmt","done":false}],"batches":[],"verification":{"id":"p4-v","done":false}},{"id":"p5","name":"Polish","day":"Saturday (Day 5)","status":"not_started","deps":["p4"],"sequential":[],"batches":[{"id":"p5-ba","label":"Visual","tasks":[{"id":"p5-t1","title":"Melt refinement","done":false},{"id":"p5-t2","title":"Landing page","done":false},{"id":"p5-t3","title":"Responsive","done":false}]},{"id":"p5-bb","label":"Robustness","tasks":[{"id":"p5-t4","title":"Error handling","done":false},{"id":"p5-t5","title":"Voice edge cases","done":false},{"id":"p5-t6","title":"Vercel deploy","done":false}]}],"verification":{"id":"p5-v","done":false}},{"id":"p6","name":"Demo + Submit","day":"Sunday (Day 6)","status":"not_started","deps":["p5"],"sequential":[{"id":"p6-t1","title":"Demo script","done":false},{"id":"p6-t2","title":"Record video","done":false},{"id":"p6-t3","title":"README","done":false},{"id":"p6-t4","title":"OSS cleanup","done":false},{"id":"p6-t5","title":"Summary","done":false},{"id":"p6-t6","title":"Submit","done":false}],"batches":[],"verification":{"id":"p6-v","done":false}}]}
+</script>
+
+<script>
+(function() {
+  var tabs = document.querySelectorAll('.tab');
+  var contents = document.querySelectorAll('.tab-content');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      contents.forEach(function(c) { c.classList.remove('active'); });
+      tab.classList.add('active');
+      var target = document.getElementById('tab-' + tab.dataset.tab);
+      if (target) { target.classList.add('active'); target.style.animation = 'none'; target.offsetHeight; target.style.animation = ''; }
+    });
+  });
+
+  var STORAGE_KEY = 'blueprint-parallax';
+  var checkboxes = document.querySelectorAll('.task-checkbox');
+  function loadState() {
+    var state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    checkboxes.forEach(function(cb) { var k = cb.dataset.key; if (k && state[k]) { cb.checked = true; var item = cb.closest('.task-item'); if (item) item.classList.add('completed'); } });
+    updateProgress();
+  }
+  checkboxes.forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      state[this.dataset.key] = this.checked;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      var item = this.closest('.task-item');
+      if (item) { if (this.checked) item.classList.add('completed'); else item.classList.remove('completed'); }
+      updateProgress();
+    });
+  });
+  function updateProgress() {
+    var total = checkboxes.length; var done = 0;
+    checkboxes.forEach(function(cb) { if (cb.checked) done++; });
+    var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    var fill = document.getElementById('progress-fill');
+    var label = document.getElementById('progress-pct');
+    if (fill) fill.style.width = pct + '%';
+    if (label) label.textContent = pct + '%';
+    var taskStat = document.getElementById('stat-tasks');
+    if (taskStat) taskStat.textContent = done + '/' + total;
+    var data = JSON.parse(document.getElementById('blueprint-data').textContent);
+    var phasesComplete = 0;
+    data.phases.forEach(function(phase) {
+      var ids = []; phase.sequential.forEach(function(t) { ids.push(t.id); });
+      (phase.batches || []).forEach(function(b) { b.tasks.forEach(function(t) { ids.push(t.id); }); });
+      if (phase.verification) ids.push(phase.verification.id);
+      var pd = 0; var pt = ids.length;
+      ids.forEach(function(id) { var c = document.querySelector('[data-key="' + id + '"]'); if (c && c.checked) pd++; });
+      var badge = document.querySelector('[data-phase="' + phase.id + '"]');
+      if (badge) {
+        if (pd === pt && pt > 0) { badge.textContent = 'Complete'; badge.className = 'phase-badge complete'; phasesComplete++; }
+        else if (pd > 0) { badge.textContent = 'In Progress'; badge.className = 'phase-badge in-progress'; }
+        else { badge.textContent = 'Not Started'; badge.className = 'phase-badge not-started'; }
+      }
+    });
+    var ps = document.getElementById('stat-phases');
+    if (ps) ps.textContent = phasesComplete + '/6';
+  }
+  loadState();
+
+  function renderMap() {
+    var svg = document.getElementById('parallel-map-svg');
+    if (!svg) return;
+    var data = JSON.parse(document.getElementById('blueprint-data').textContent);
+    var phases = data.phases;
+    var y = 20; var LEFT = 20; var W = 660; var PH = 48; var TH = 36; var GAP = 16;
+    var positions = {};
+    var elements = [];
+
+    elements.push('<line x1="10" y1="20" x2="10" y2="700" stroke="rgba(90,85,80,0.15)" stroke-width="2"/>');
+
+    phases.forEach(function(phase, pi) {
+      positions[phase.id] = y;
+      elements.push('<g class="phase-node" data-phase-id="' + phase.id + '" style="cursor:pointer">');
+      elements.push('<rect x="' + LEFT + '" y="' + y + '" width="' + W + '" height="' + PH + '" rx="4" fill="rgba(15,14,13,0.9)" stroke="rgba(90,85,80,0.4)" stroke-width="1"/>');
+      elements.push('<text x="' + (LEFT+16) + '" y="' + (y+20) + '" fill="#ef6f2e" font-family="monospace" font-size="10" letter-spacing="0.1em">' + phase.id.toUpperCase() + '</text>');
+      elements.push('<text x="' + (LEFT+60) + '" y="' + (y+20) + '" fill="#eeeeee" font-family="sans-serif" font-size="12">' + phase.name + '</text>');
+      elements.push('<text x="' + (LEFT+60) + '" y="' + (y+36) + '" fill="#605850" font-family="monospace" font-size="9">' + phase.day + '</text>');
+      elements.push('</g>');
+
+      elements.push('<circle cx="10" cy="' + (y + PH/2) + '" r="5" fill="#ef6f2e" opacity="0.6"/>');
+
+      y += PH + GAP;
+      var allTasks = phase.sequential.slice();
+      (phase.batches || []).forEach(function(b) { allTasks = allTasks.concat(b.tasks); });
+      allTasks.forEach(function(task) {
+        elements.push('<rect x="' + (LEFT+20) + '" y="' + y + '" width="' + (W-40) + '" height="' + TH + '" rx="3" fill="rgba(10,10,9,0.8)" stroke="rgba(90,85,80,0.2)" stroke-width="0.5"/>');
+        elements.push('<text x="' + (LEFT+36) + '" y="' + (y+TH/2+4) + '" fill="#a09890" font-family="sans-serif" font-size="10">' + task.title.substring(0,65) + '</text>');
+        y += TH + 6;
+      });
+
+      phase.deps.forEach(function(depId) {
+        if (positions[depId] !== undefined) {
+          elements.push('<line class="dep-line" data-from="' + depId + '" data-to="' + phase.id + '" x1="10" y1="' + (positions[depId] + PH) + '" x2="10" y2="' + positions[phase.id] + '" stroke="rgba(90,85,80,0.3)" stroke-width="2" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" values="8;0" dur="2s" repeatCount="indefinite"/></line>');
+        }
+      });
+      y += GAP * 2;
+    });
+
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    var temp = document.createElement('div');
+    temp.textContent = elements.join('');
+    g.insertAdjacentHTML = undefined;
+    svg.setAttribute('viewBox', '0 0 700 ' + (y + 20));
+
+    var parser = new DOMParser();
+    var svgStr = '<svg xmlns="http://www.w3.org/2000/svg">' + elements.join('') + '</svg>';
+    var parsed = parser.parseFromString(svgStr, 'image/svg+xml');
+    var nodes = parsed.documentElement.childNodes;
+    while (nodes.length > 0) svg.appendChild(nodes[0]);
+
+    svg.querySelectorAll('.phase-node').forEach(function(node) {
+      node.addEventListener('mouseenter', function() {
+        var pid = this.dataset.phaseId;
+        svg.querySelectorAll('.phase-node').forEach(function(n) { n.style.opacity = '0.2'; n.style.transition = 'opacity 0.2s'; });
+        this.style.opacity = '1';
+        var phase = data.phases.find(function(p) { return p.id === pid; });
+        if (phase) {
+          phase.deps.forEach(function(d) {
+            var n = svg.querySelector('.phase-node[data-phase-id="' + d + '"]');
+            if (n) { n.style.opacity = '0.8'; n.querySelector('rect').setAttribute('stroke', '#f59e0b'); }
+          });
+        }
+        data.phases.forEach(function(p) {
+          if (p.deps.indexOf(pid) !== -1) {
+            var n = svg.querySelector('.phase-node[data-phase-id="' + p.id + '"]');
+            if (n) { n.style.opacity = '0.8'; n.querySelector('rect').setAttribute('stroke', '#4ecdc4'); }
+          }
+        });
+      });
+      node.addEventListener('mouseleave', function() {
+        svg.querySelectorAll('.phase-node').forEach(function(n) {
+          n.style.opacity = ''; n.style.transition = '';
+          var r = n.querySelector('rect'); if (r) r.setAttribute('stroke', 'rgba(90,85,80,0.4)');
+        });
+      });
+    });
+  }
+
+  document.querySelector('[data-tab="map"]').addEventListener('click', function() { setTimeout(renderMap, 50); });
+
+  window.copyPrompt = function(btn) {
+    var block = btn.closest('.prompt-block');
+    var text = block.querySelector('.prompt-text').textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = 'Copied'; btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  };
+})();
+</script>
+</body>
+</html>
