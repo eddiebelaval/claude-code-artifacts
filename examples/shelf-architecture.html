@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shelf — Reading Tracker Architecture</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --base-primary:     #020202;
+    --base-secondary:   #101010;
+    --base-card:        #1f1d1c;
+    --text-primary:     #eeeeee;
+    --text-secondary:   #a49d9a;
+    --text-muted:       #5c5855;
+    --border-subtle:    #2e2c2b;
+    --border-visible:   #3d3a39;
+    --accent:           #ef6f2e;
+    --accent-hover:     #ee6018;
+    --accent-active:    #d15010;
+    --amber:            #f59e0b;
+    --teal:             #4ecdc4;
+    --font-sans:  'Geist', -apple-system, 'Segoe UI', system-ui, sans-serif;
+    --font-mono:  'Geist Mono', 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  }
+
+  body {
+    background: var(--base-primary);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 36px 120px;
+  }
+
+  /* Section indicators */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .section-label .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  .section-label span {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+  }
+
+  /* Typography */
+  h1 {
+    font-family: var(--font-sans);
+    font-size: 48px;
+    font-weight: 400;
+    letter-spacing: -2px;
+    line-height: 1.0;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    font-family: var(--font-sans);
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+  }
+
+  /* Tabs */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tab-btn:hover { border-color: var(--border-visible); color: var(--text-primary); }
+
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #020202;
+  }
+
+  /* Tab panels */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Animations */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(239,111,46,0.15); }
+    50% { box-shadow: 0 0 6px rgba(239,111,46,0.15); }
+  }
+
+  @keyframes countUp { from { opacity: 0; } to { opacity: 1; } }
+
+  @keyframes flowDash { to { stroke-dashoffset: -40; } }
+
+  .anim-item {
+    opacity: 0;
+    animation: fadeSlideUp 0.7s ease-out forwards;
+  }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .stat-card {
+    background: var(--base-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 20px;
+    transition: border-color 0.15s;
+  }
+
+  .stat-card:hover { border-color: var(--border-visible); }
+
+  .stat-number {
+    font-family: var(--font-sans);
+    font-size: 32px;
+    font-weight: 400;
+    letter-spacing: -1px;
+    color: var(--accent);
+  }
+
+  .stat-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--base-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 28px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+  }
+
+  .card:hover { border-color: var(--border-visible); transform: translateY(-2px); }
+
+  .card p { color: var(--text-secondary); line-height: 1.7; }
+  .card p + p { margin-top: 10px; }
+
+  .badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+
+  .badge-orange { background: rgba(239,111,46,0.15); color: var(--accent); }
+  .badge-teal { background: rgba(78,205,196,0.15); color: var(--teal); }
+  .badge-amber { background: rgba(245,158,11,0.15); color: var(--amber); }
+
+  /* File tree */
+  .file-tree {
+    background: var(--base-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+
+  .file-tree .dir { color: var(--text-secondary); }
+  .file-tree .file { color: var(--text-primary); }
+  .file-tree .comment { color: var(--text-muted); }
+  .file-tree .highlight { color: var(--accent); }
+
+  /* Architecture diagram */
+  .diagram-container {
+    background: var(--base-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+
+  .flow-path {
+    stroke: var(--accent);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 8 12;
+    animation: flowDash 1.5s linear infinite;
+  }
+
+  .flow-path-amber {
+    stroke: var(--amber);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 8 12;
+    animation: flowDash 2s linear infinite;
+  }
+
+  .flow-path-teal {
+    stroke: var(--teal);
+    stroke-width: 1.5;
+    fill: none;
+    stroke-dasharray: 6 10;
+    animation: flowDash 2.5s linear infinite;
+  }
+
+  /* Data flow steps */
+  .flow-steps { margin-top: 20px; }
+
+  .flow-step {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+
+  .flow-step-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    min-width: 24px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  .flow-step-content {
+    flex: 1;
+  }
+
+  .flow-step-title {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .flow-step-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* Two column grid */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Assessment */
+  .assessment-item { margin-bottom: 16px; }
+
+  .assessment-check {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+
+  .assess-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--border-visible);
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .assess-checkbox:checked {
+    background: var(--teal);
+    border-color: var(--teal);
+  }
+
+  .assess-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 4px;
+    height: 8px;
+    border: solid #020202;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .assess-label {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+  }
+
+  .assess-body {
+    margin-left: 28px;
+    margin-top: 8px;
+    transition: opacity 0.3s ease;
+  }
+
+  .assess-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  .assessment-item.completed .assess-label {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  .assessment-item.completed .assess-body {
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  .assessment-item.completed .severity-badge { opacity: 0.3; }
+
+  .severity-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+
+  .severity-badge.critical { background: rgba(239,68,68,0.2); color: #ef4444; }
+  .severity-badge.high { background: rgba(239,111,46,0.2); color: var(--accent); }
+  .severity-badge.medium { background: rgba(245,158,11,0.2); color: var(--amber); }
+  .severity-badge.low { background: rgba(78,205,196,0.2); color: var(--teal); }
+
+  .prompt-block {
+    background: var(--base-secondary);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    position: relative;
+    margin-top: 12px;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--border-subtle);
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  .copy-btn:hover { background: var(--border-visible); color: var(--text-primary); }
+  .copy-btn.copied { color: var(--teal); }
+
+  .assess-progress {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+  }
+
+  /* Wins */
+  .win-card {
+    background: var(--base-card);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--teal);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .win-card h3 { color: var(--teal); }
+  .win-card p { color: var(--text-secondary); font-size: 13px; line-height: 1.6; margin-top: 6px; }
+
+  /* Footer */
+  .footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .container { padding: 40px 20px 80px; }
+    h1 { font-size: 32px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .tab-btn { padding: 6px 12px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="section-label">
+    <div class="dot"></div>
+    <span>Architecture</span>
+  </div>
+  <h1>Shelf</h1>
+  <p class="subtitle">A reading tracker with social recommendations, reading streaks, and AI-powered book summaries</p>
+
+  <!-- Tabs -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="structure">Structure</button>
+    <button class="tab-btn" data-tab="architecture">Architecture</button>
+    <button class="tab-btn" data-tab="dataflow">Data Flow</button>
+    <button class="tab-btn" data-tab="assessment">Assessment</button>
+  </nav>
+
+  <!-- TAB: Overview -->
+  <div class="tab-panel active" id="tab-overview">
+    <div class="stats-grid">
+      <div class="stat-card anim-item">
+        <div class="stat-number" data-target="12">0</div>
+        <div class="stat-desc">API routes</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="stat-number" data-target="6">0</div>
+        <div class="stat-desc">Database tables</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="stat-number" data-target="3">0</div>
+        <div class="stat-desc">External integrations</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="stat-number" data-target="8">0</div>
+        <div class="stat-desc">UI components</div>
+      </div>
+    </div>
+
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>What it does</span>
+    </div>
+    <div class="card anim-item">
+      <p>Shelf lets users track books they're reading, maintain reading streaks, get AI-generated summaries, and discover new books through friends' activity. Built as a Next.js app with Supabase for auth and storage, and Claude for generating book summaries and personalized recommendations.</p>
+    </div>
+
+    <div class="section-label anim-item" style="margin-top: 32px;">
+      <div class="dot"></div>
+      <span>Key Features</span>
+    </div>
+    <div class="two-col">
+      <div class="card anim-item">
+        <span class="badge badge-orange">Core</span>
+        <h3>Book Tracking</h3>
+        <p>Search Open Library API, add to shelf, track reading progress with page counts and status (reading, finished, abandoned).</p>
+      </div>
+      <div class="card anim-item">
+        <span class="badge badge-orange">Core</span>
+        <h3>Reading Streaks</h3>
+        <p>Daily check-in system. Log minutes read to maintain streak. Streak freeze available once per week.</p>
+      </div>
+      <div class="card anim-item">
+        <span class="badge badge-teal">AI</span>
+        <h3>Smart Summaries</h3>
+        <p>Claude generates chapter summaries, key takeaways, and discussion prompts for any book on the shelf.</p>
+      </div>
+      <div class="card anim-item">
+        <span class="badge badge-amber">Social</span>
+        <h3>Friend Activity</h3>
+        <p>Follow friends, see what they're reading, react to their reviews. Privacy-first: all sharing is opt-in.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Structure -->
+  <div class="tab-panel" id="tab-structure">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>File Structure</span>
+    </div>
+    <div class="file-tree anim-item">
+<span class="dir">shelf/</span>
+  <span class="dir">src/</span>
+    <span class="dir">app/</span>
+      <span class="file highlight">layout.tsx</span>              <span class="comment">-- root layout, auth provider</span>
+      <span class="file highlight">page.tsx</span>                <span class="comment">-- landing page</span>
+      <span class="dir">dashboard/</span>
+        <span class="file">page.tsx</span>                <span class="comment">-- main shelf view</span>
+        <span class="file">loading.tsx</span>             <span class="comment">-- skeleton loader</span>
+      <span class="dir">book/[id]/</span>
+        <span class="file">page.tsx</span>                <span class="comment">-- book detail + summary</span>
+      <span class="dir">friends/</span>
+        <span class="file">page.tsx</span>                <span class="comment">-- friend activity feed</span>
+      <span class="dir">api/</span>
+        <span class="dir">books/</span>
+          <span class="file highlight">route.ts</span>            <span class="comment">-- CRUD: shelf operations</span>
+          <span class="file">[id]/route.ts</span>         <span class="comment">-- single book ops</span>
+          <span class="file">[id]/summary/route.ts</span> <span class="comment">-- AI summary generation</span>
+        <span class="dir">streaks/</span>
+          <span class="file">route.ts</span>              <span class="comment">-- streak check-in + status</span>
+        <span class="dir">friends/</span>
+          <span class="file">route.ts</span>              <span class="comment">-- follow/unfollow + feed</span>
+        <span class="dir">search/</span>
+          <span class="file">route.ts</span>              <span class="comment">-- Open Library proxy</span>
+    <span class="dir">components/</span>
+      <span class="file">BookCard.tsx</span>              <span class="comment">-- shelf item with progress bar</span>
+      <span class="file">StreakCounter.tsx</span>          <span class="comment">-- flame animation + count</span>
+      <span class="file">SummaryPanel.tsx</span>           <span class="comment">-- expandable AI summary</span>
+      <span class="file">FriendFeed.tsx</span>             <span class="comment">-- activity stream</span>
+      <span class="file">SearchModal.tsx</span>            <span class="comment">-- book search + add to shelf</span>
+      <span class="file">ProgressSlider.tsx</span>         <span class="comment">-- page count tracker</span>
+      <span class="file">ReviewEditor.tsx</span>           <span class="comment">-- markdown review writer</span>
+      <span class="file">ShareToggle.tsx</span>            <span class="comment">-- privacy control per book</span>
+    <span class="dir">lib/</span>
+      <span class="file highlight">supabase.ts</span>             <span class="comment">-- client + server helpers</span>
+      <span class="file">openlib.ts</span>               <span class="comment">-- Open Library API wrapper</span>
+      <span class="file">claude.ts</span>                <span class="comment">-- summary generation prompts</span>
+      <span class="file">streaks.ts</span>               <span class="comment">-- streak logic + freeze rules</span>
+    <span class="dir">types/</span>
+      <span class="file">index.ts</span>                 <span class="comment">-- Book, Streak, Friend, Summary</span>
+  <span class="file">supabase/migrations/</span>          <span class="comment">-- 3 migration files</span>
+  <span class="file">package.json</span>
+  <span class="file">next.config.ts</span>
+    </div>
+  </div>
+
+  <!-- TAB: Architecture -->
+  <div class="tab-panel" id="tab-architecture">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>System Architecture</span>
+    </div>
+    <div class="diagram-container anim-item">
+      <svg viewBox="0 0 800 460" width="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Boundary: Frontend -->
+        <rect x="20" y="20" width="280" height="120" rx="8" fill="none" stroke="#2e2c2b" stroke-width="1" stroke-dasharray="4 6"/>
+        <text x="32" y="14" fill="#5c5855" font-family="monospace" font-size="9" letter-spacing="1.5">FRONTEND</text>
+
+        <!-- Next.js App -->
+        <rect x="40" y="45" width="160" height="52" rx="4" fill="#1f1d1c" stroke="#ef6f2e" stroke-width="1.5"/>
+        <text x="120" y="75" text-anchor="middle" fill="#eeeeee" font-family="monospace" font-size="11">Next.js App</text>
+
+        <!-- User -->
+        <circle cx="260" cy="71" r="22" fill="none" stroke="#ef6f2e" stroke-width="1.5"/>
+        <text x="260" y="75" text-anchor="middle" fill="#ef6f2e" font-family="monospace" font-size="9">USER</text>
+
+        <!-- Boundary: API Layer -->
+        <rect x="20" y="170" width="760" height="80" rx="8" fill="none" stroke="#2e2c2b" stroke-width="1" stroke-dasharray="4 6"/>
+        <text x="32" y="164" fill="#5c5855" font-family="monospace" font-size="9" letter-spacing="1.5">API ROUTES</text>
+
+        <!-- API boxes -->
+        <rect x="40" y="190" width="120" height="40" rx="4" fill="#1f1d1c" stroke="#2e2c2b" stroke-width="1"/>
+        <text x="100" y="214" text-anchor="middle" fill="#a49d9a" font-family="monospace" font-size="10">/api/books</text>
+
+        <rect x="180" y="190" width="120" height="40" rx="4" fill="#1f1d1c" stroke="#2e2c2b" stroke-width="1"/>
+        <text x="240" y="214" text-anchor="middle" fill="#a49d9a" font-family="monospace" font-size="10">/api/streaks</text>
+
+        <rect x="320" y="190" width="120" height="40" rx="4" fill="#1f1d1c" stroke="#2e2c2b" stroke-width="1"/>
+        <text x="380" y="214" text-anchor="middle" fill="#a49d9a" font-family="monospace" font-size="10">/api/friends</text>
+
+        <rect x="460" y="190" width="120" height="40" rx="4" fill="#1f1d1c" stroke="#2e2c2b" stroke-width="1"/>
+        <text x="520" y="214" text-anchor="middle" fill="#a49d9a" font-family="monospace" font-size="10">/api/search</text>
+
+        <rect x="600" y="190" width="160" height="40" rx="4" fill="#1f1d1c" stroke="#2e2c2b" stroke-width="1"/>
+        <text x="680" y="214" text-anchor="middle" fill="#a49d9a" font-family="monospace" font-size="10">/api/books/summary</text>
+
+        <!-- Boundary: Data Layer -->
+        <rect x="20" y="290" width="480" height="150" rx="8" fill="none" stroke="#2e2c2b" stroke-width="1" stroke-dasharray="4 6"/>
+        <text x="32" y="284" fill="#5c5855" font-family="monospace" font-size="9" letter-spacing="1.5">DATA LAYER</text>
+
+        <!-- Supabase (database cylinder) -->
+        <ellipse cx="120" cy="330" rx="60" ry="12" fill="#1f1d1c" stroke="#2e2c2b" stroke-width="1"/>
+        <rect x="60" y="330" width="120" height="48" fill="#1f1d1c" stroke="#2e2c2b" stroke-width="1"/>
+        <ellipse cx="120" cy="378" rx="60" ry="12" fill="#1f1d1c" stroke="#2e2c2b" stroke-width="1"/>
+        <text x="120" y="360" text-anchor="middle" fill="#a49d9a" font-family="monospace" font-size="10">Supabase</text>
+        <text x="120" y="374" text-anchor="middle" fill="#5c5855" font-family="monospace" font-size="8">6 tables</text>
+
+        <!-- Supabase Auth -->
+        <rect x="240" y="320" width="120" height="40" rx="4" fill="#1f1d1c" stroke="#4ecdc4" stroke-width="1"/>
+        <text x="300" y="344" text-anchor="middle" fill="#4ecdc4" font-family="monospace" font-size="10">Supabase Auth</text>
+
+        <!-- Cache -->
+        <rect x="410" y="330" width="36" height="36" rx="2" fill="#1f1d1c" stroke="#4ecdc4" stroke-width="1" transform="rotate(45, 428, 348)"/>
+        <text x="428" y="386" text-anchor="middle" fill="#4ecdc4" font-family="monospace" font-size="9">CACHE</text>
+
+        <!-- Boundary: External Services -->
+        <rect x="520" y="290" width="260" height="150" rx="8" fill="none" stroke="#2e2c2b" stroke-width="1" stroke-dasharray="4 6"/>
+        <text x="532" y="284" fill="#5c5855" font-family="monospace" font-size="9" letter-spacing="1.5">EXTERNAL SERVICES</text>
+
+        <!-- Open Library -->
+        <rect x="540" y="310" width="140" height="44" rx="4" fill="none" stroke="#5c5855" stroke-width="1" stroke-dasharray="6 4"/>
+        <text x="610" y="336" text-anchor="middle" fill="#5c5855" font-family="monospace" font-size="10">Open Library API</text>
+
+        <!-- Claude -->
+        <rect x="540" y="375" width="140" height="44" rx="4" fill="none" stroke="#5c5855" stroke-width="1" stroke-dasharray="6 4"/>
+        <text x="610" y="401" text-anchor="middle" fill="#5c5855" font-family="monospace" font-size="10">Claude API</text>
+
+        <!-- Resend -->
+        <rect x="700" y="310" width="60" height="44" rx="4" fill="none" stroke="#5c5855" stroke-width="1" stroke-dasharray="6 4"/>
+        <text x="730" y="336" text-anchor="middle" fill="#5c5855" font-family="monospace" font-size="10">Resend</text>
+
+        <!-- CONNECTIONS -->
+
+        <!-- User -> Next.js -->
+        <path d="M238,71 L205,71" stroke="#3d3a39" stroke-width="1.5" fill="none"/>
+        <path d="M238,71 L205,71" class="flow-path"/>
+
+        <!-- Next.js -> API routes -->
+        <path id="conn-app-api" d="M120,97 L120,190" stroke="#3d3a39" stroke-width="1.5" fill="none"/>
+        <path d="M120,97 L120,190" class="flow-path"/>
+        <circle r="3" fill="#ef6f2e" filter="url(#glow)">
+          <animateMotion dur="2s" repeatCount="indefinite">
+            <mpath href="#conn-app-api"/>
+          </animateMotion>
+          <animate attributeName="opacity" values="0;0.9;0.9;0" dur="2s" repeatCount="indefinite"/>
+        </circle>
+
+        <!-- API -> Supabase -->
+        <path id="conn-api-db" d="M100,230 L120,320" stroke="#3d3a39" stroke-width="1.5" fill="none"/>
+        <path d="M100,230 L120,320" class="flow-path"/>
+
+        <!-- API -> Auth -->
+        <path d="M240,230 L300,320" stroke="#3d3a39" stroke-width="1.5" fill="none"/>
+        <path d="M240,230 L300,320" class="flow-path-teal"/>
+
+        <!-- API -> Open Library -->
+        <path d="M520,230 L610,310" stroke="#3d3a39" stroke-width="1.5" fill="none"/>
+        <path d="M520,230 L610,310" class="flow-path-amber"/>
+
+        <!-- API -> Claude -->
+        <path id="conn-api-claude" d="M680,230 L610,375" stroke="#3d3a39" stroke-width="1.5" fill="none"/>
+        <path d="M680,230 L610,375" class="flow-path-amber"/>
+        <circle r="3" fill="#f59e0b" filter="url(#glow)">
+          <animateMotion dur="3s" repeatCount="indefinite">
+            <mpath href="#conn-api-claude"/>
+          </animateMotion>
+          <animate attributeName="opacity" values="0;0.8;0.8;0" dur="3s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
+
+    <div class="section-label anim-item" style="margin-top: 32px;">
+      <div class="dot"></div>
+      <span>Technology Choices</span>
+    </div>
+    <div class="two-col">
+      <div class="card anim-item">
+        <h3>Why Next.js App Router</h3>
+        <p>Server components for book detail pages (SEO-friendly). API routes co-located with the app (same-origin, no CORS). Streaming for AI summary generation.</p>
+      </div>
+      <div class="card anim-item">
+        <h3>Why Supabase</h3>
+        <p>Auth out of the box. Row Level Security means the API doesn't need manual permission checks. Realtime subscriptions for friend activity feed updates.</p>
+      </div>
+      <div class="card anim-item">
+        <h3>Why Claude for Summaries</h3>
+        <p>Long context window handles full book chapters. Structured output for consistent summary format. Low hallucination rate on factual book content.</p>
+      </div>
+      <div class="card anim-item">
+        <h3>Why Open Library</h3>
+        <p>Free, no API key required. Covers 20M+ books. ISBN lookup + full-text search. Rate limits are generous (100 req/min).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Data Flow -->
+  <div class="tab-panel" id="tab-dataflow">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Adding a Book to the Shelf</span>
+    </div>
+
+    <div class="flow-steps anim-item">
+      <div class="flow-step">
+        <div class="flow-step-num">01</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">User searches for a book</div>
+          <div class="flow-step-desc">SearchModal sends query to <code>/api/search</code>, which proxies to Open Library. Results cached for 5 minutes.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">02</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">User clicks "Add to Shelf"</div>
+          <div class="flow-step-desc">POST to <code>/api/books</code> with Open Library work ID, title, author, cover URL. Server creates row in <code>books</code> table with status "reading".</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">03</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Dashboard updates optimistically</div>
+          <div class="flow-step-desc">BookCard appears immediately via optimistic update. Supabase Realtime confirms the insert. If insert fails, card rolls back with toast error.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">04</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Summary generation triggered on first view</div>
+          <div class="flow-step-desc">When user opens book detail, <code>/api/books/[id]/summary</code> checks if a summary exists. If not, fires a background request to Claude. Summary streams back and is persisted to <code>summaries</code> table.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">05</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Friend feed picks it up</div>
+          <div class="flow-step-desc">If the user has sharing enabled, the book addition triggers a Supabase Realtime event. Friends following this user see the new book in their activity feed within seconds.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label anim-item" style="margin-top: 40px;">
+      <div class="dot"></div>
+      <span>Streak Check-in Flow</span>
+    </div>
+
+    <div class="flow-steps anim-item">
+      <div class="flow-step">
+        <div class="flow-step-num">01</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">User logs reading time</div>
+          <div class="flow-step-desc">StreakCounter component sends POST to <code>/api/streaks</code> with minutes read. Server validates (minimum 5 minutes to count).</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">02</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Server checks streak continuity</div>
+          <div class="flow-step-desc">Queries last check-in date. If yesterday: increment streak. If today: update minutes. If older: check for freeze token, reset if none.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">03</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Response includes streak state</div>
+          <div class="flow-step-desc">Returns current streak count, longest streak, freeze availability, and whether today's check-in is complete. StreakCounter animates the flame icon.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label anim-item" style="margin-top: 40px;">
+      <div class="dot"></div>
+      <span>Database Schema</span>
+    </div>
+    <div class="card anim-item">
+      <div class="file-tree">
+<span class="highlight">users</span>           <span class="comment">-- Supabase auth.users (managed)</span>
+<span class="highlight">books</span>           <span class="comment">-- id, user_id, open_lib_id, title, author, cover_url, status, pages_read, total_pages, is_public, created_at</span>
+<span class="highlight">summaries</span>       <span class="comment">-- id, book_id, content (jsonb), model_version, created_at</span>
+<span class="highlight">streaks</span>         <span class="comment">-- id, user_id, current_streak, longest_streak, last_checkin, freeze_available, minutes_today</span>
+<span class="highlight">follows</span>         <span class="comment">-- follower_id, following_id, created_at (composite PK)</span>
+<span class="highlight">reviews</span>         <span class="comment">-- id, book_id, user_id, content (markdown), rating, is_public, created_at</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Assessment -->
+  <div class="tab-panel" id="tab-assessment">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Senior Dev Assessment</span>
+    </div>
+    <span id="assess-progress" class="assess-progress anim-item">0 of 6 addressed</span>
+
+    <!-- Wins -->
+    <h2 class="anim-item" style="margin-top: 24px; color: var(--teal);">What We Did Right</h2>
+
+    <div class="win-card anim-item">
+      <h3>Same-origin API routes</h3>
+      <p>All API routes live inside the Next.js app. No separate backend service, no CORS configuration, no extra deployment target. This keeps the architecture simple and the deploy fast.</p>
+    </div>
+
+    <div class="win-card anim-item">
+      <h3>Lazy summary generation</h3>
+      <p>AI summaries are generated on first view, not on book add. This avoids wasting Claude API credits on books the user might never open, and it means the "add book" flow stays instant.</p>
+    </div>
+
+    <div class="win-card anim-item">
+      <h3>Privacy-first social features</h3>
+      <p>Every book defaults to private. Users must explicitly opt in to share each book. The <code>is_public</code> column on both <code>books</code> and <code>reviews</code> tables enforced via RLS.</p>
+    </div>
+
+    <!-- Fixes -->
+    <h2 class="anim-item" style="margin-top: 40px; color: var(--accent);">What Needs Fixing</h2>
+
+    <div class="assessment-item anim-item" id="assess-fix-1">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="fix-1">
+        <span class="assess-label">No rate limiting on summary endpoint</span>
+      </label>
+      <div class="assess-body">
+        <span class="severity-badge high">HIGH</span>
+        <p class="assess-desc">The <code>/api/books/[id]/summary</code> endpoint calls Claude with no rate limiting. A user could hammer this endpoint and rack up API costs. Add per-user rate limiting (max 5 summaries per hour).</p>
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">In src/app/api/books/[id]/summary/route.ts, add rate limiting before the Claude call. Query the summaries table for count of rows created by this user in the last hour. If >= 5, return 429 with { error: "Rate limit exceeded. Max 5 summaries per hour." }. Use the authenticated user ID from Supabase auth.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-item anim-item" id="assess-fix-2">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="fix-2">
+        <span class="assess-label">Streak reset has no grace period</span>
+      </label>
+      <div class="assess-body">
+        <span class="severity-badge medium">MEDIUM</span>
+        <p class="assess-desc">If a user checks in at 11:55 PM and then at 12:05 AM the next day, the streak logic sees it as the same day (no credit for day 2). Consider using a rolling 24-hour window instead of calendar days, or allow a 2-hour grace period past midnight.</p>
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">In src/lib/streaks.ts, update the streak continuity check. Instead of comparing calendar dates, check if the gap between last_checkin and now is less than 26 hours. This gives a 2-hour grace period past midnight for users in edge timezones. Add a test case for the 11:55 PM -> 12:05 AM scenario.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-item anim-item" id="assess-fix-3">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="fix-3">
+        <span class="assess-label">Open Library search results not validated</span>
+      </label>
+      <div class="assess-body">
+        <span class="severity-badge low">LOW</span>
+        <p class="assess-desc">The search proxy passes Open Library results directly to the client. If the external API returns unexpected fields or malformed data, the BookCard component could crash. Add a Zod schema to validate and sanitize the response.</p>
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">In src/lib/openlib.ts, add a Zod schema for the Open Library search response. Validate title (string), author_name (string[]), cover_i (number, optional), and key (string). Use .safeParse() and filter out any results that fail validation. This prevents malformed data from crashing BookCard.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Next Steps -->
+    <h2 class="anim-item" style="margin-top: 40px; color: var(--accent);">High-Impact Next Steps</h2>
+
+    <div class="assessment-item anim-item" id="assess-next-1">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="next-1">
+        <span class="assess-label">Add reading goal system</span>
+      </label>
+      <div class="assess-body">
+        <p class="assess-desc">Users can set a yearly reading goal (e.g., "Read 24 books in 2026"). Progress tracked automatically from book status changes. Drives engagement and gives the streak system more purpose.</p>
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">Add a goals table (id, user_id, year, target_count, created_at). Create /api/goals route for CRUD. In the dashboard, add a GoalProgress component that queries completed books for the current year and renders a progress ring. Wire up the book status change to "finished" to trigger a goal progress check.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-item anim-item" id="assess-next-2">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="next-2">
+        <span class="assess-label">Implement book clubs</span>
+      </label>
+      <div class="assess-body">
+        <p class="assess-desc">Group reading with shared progress tracking and discussion threads. Natural extension of the friend system. Monetization opportunity (premium book clubs with curated AI discussion prompts).</p>
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">Create two new tables: clubs (id, name, creator_id, book_id, created_at) and club_members (club_id, user_id, joined_at). Add /api/clubs route. Build a ClubView page at /club/[id] showing shared progress bars for all members and a discussion feed. Use Supabase Realtime for live progress updates.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-item anim-item" id="assess-next-3">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="next-3">
+        <span class="assess-label">Add export and data portability</span>
+      </label>
+      <div class="assess-body">
+        <p class="assess-desc">Let users export their reading history as CSV or JSON. Builds trust, reduces lock-in anxiety, and is increasingly a regulatory expectation. Simple to implement, high goodwill payoff.</p>
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">Add /api/export route that queries all books, reviews, and streaks for the authenticated user. Return as JSON with Content-Disposition header for download. Add a CSV option using a simple string builder (no library needed). Add an "Export My Data" button in a settings page.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompts Summary -->
+    <h2 class="anim-item" style="margin-top: 40px; color: var(--teal);">All Prompts</h2>
+
+    <div class="assessment-item anim-item" id="assess-prompt-fix-1">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="fix-1">
+        <span class="assess-label">1. Rate limit summary endpoint</span>
+      </label>
+      <div class="assess-body">
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">In src/app/api/books/[id]/summary/route.ts, add rate limiting before the Claude call. Query the summaries table for count of rows created by this user in the last hour. If >= 5, return 429 with { error: "Rate limit exceeded. Max 5 summaries per hour." }. Use the authenticated user ID from Supabase auth.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-item anim-item" id="assess-prompt-fix-2">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="fix-2">
+        <span class="assess-label">2. Add streak grace period</span>
+      </label>
+      <div class="assess-body">
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">In src/lib/streaks.ts, update the streak continuity check. Instead of comparing calendar dates, check if the gap between last_checkin and now is less than 26 hours. This gives a 2-hour grace period past midnight for users in edge timezones. Add a test case for the 11:55 PM -> 12:05 AM scenario.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-item anim-item" id="assess-prompt-fix-3">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="fix-3">
+        <span class="assess-label">3. Validate Open Library responses</span>
+      </label>
+      <div class="assess-body">
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">In src/lib/openlib.ts, add a Zod schema for the Open Library search response. Validate title (string), author_name (string[]), cover_i (number, optional), and key (string). Use .safeParse() and filter out any results that fail validation. This prevents malformed data from crashing BookCard.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-item anim-item" id="assess-prompt-next-1">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="next-1">
+        <span class="assess-label">4. Build reading goal system</span>
+      </label>
+      <div class="assess-body">
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">Add a goals table (id, user_id, year, target_count, created_at). Create /api/goals route for CRUD. In the dashboard, add a GoalProgress component that queries completed books for the current year and renders a progress ring. Wire up the book status change to "finished" to trigger a goal progress check.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-item anim-item" id="assess-prompt-next-2">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="next-2">
+        <span class="assess-label">5. Implement book clubs</span>
+      </label>
+      <div class="assess-body">
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">Create two new tables: clubs (id, name, creator_id, book_id, created_at) and club_members (club_id, user_id, joined_at). Add /api/clubs route. Build a ClubView page at /club/[id] showing shared progress bars for all members and a discussion feed. Use Supabase Realtime for live progress updates.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assessment-item anim-item" id="assess-prompt-next-3">
+      <label class="assessment-check">
+        <input type="checkbox" class="assess-checkbox" data-key="next-3">
+        <span class="assess-label">6. Add data export</span>
+      </label>
+      <div class="assess-body">
+        <div class="prompt-block">
+          <button class="copy-btn">COPY</button>
+          <div class="prompt-text">Add /api/export route that queries all books, reviews, and streaks for the authenticated user. Return as JSON with Content-Disposition header for download. Add a CSV option using a simple string builder (no library needed). Add an "Export My Data" button in a settings page.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    Generated with /visualize -- a Claude Code skill<br>
+    github.com/eddiebelaval/claude-code-visualize
+  </footer>
+
+</div>
+
+<!-- Embedded data model -->
+<script type="application/json" id="artifact-data">
+{
+  "type": "visualize",
+  "topic": "shelf-architecture",
+  "project": "shelf",
+  "generated": "2026-02-10T00:00:00Z",
+  "sections": [
+    { "id": "overview", "title": "Overview", "type": "tab" },
+    { "id": "structure", "title": "Structure", "type": "tab" },
+    { "id": "architecture", "title": "Architecture", "type": "tab" },
+    { "id": "dataflow", "title": "Data Flow", "type": "tab" },
+    { "id": "assessment", "title": "Assessment", "type": "tab" }
+  ],
+  "nodes": [
+    { "id": "nextjs", "label": "Next.js App", "type": "service", "section": "architecture" },
+    { "id": "user", "label": "User", "type": "actor", "section": "architecture" },
+    { "id": "api-books", "label": "/api/books", "type": "service", "section": "architecture" },
+    { "id": "api-streaks", "label": "/api/streaks", "type": "service", "section": "architecture" },
+    { "id": "api-friends", "label": "/api/friends", "type": "service", "section": "architecture" },
+    { "id": "api-search", "label": "/api/search", "type": "service", "section": "architecture" },
+    { "id": "api-summary", "label": "/api/books/summary", "type": "service", "section": "architecture" },
+    { "id": "supabase", "label": "Supabase", "type": "database", "section": "architecture" },
+    { "id": "supabase-auth", "label": "Supabase Auth", "type": "service", "section": "architecture" },
+    { "id": "cache", "label": "Cache", "type": "cache", "section": "architecture" },
+    { "id": "openlib", "label": "Open Library API", "type": "external", "section": "architecture" },
+    { "id": "claude", "label": "Claude API", "type": "external", "section": "architecture" },
+    { "id": "resend", "label": "Resend", "type": "external", "section": "architecture" }
+  ],
+  "edges": [
+    { "from": "user", "to": "nextjs", "label": "HTTPS", "style": "flow" },
+    { "from": "nextjs", "to": "api-books", "label": "internal", "style": "flow" },
+    { "from": "api-books", "to": "supabase", "label": "PostgREST", "style": "flow" },
+    { "from": "api-search", "to": "openlib", "label": "REST", "style": "flow-amber" },
+    { "from": "api-summary", "to": "claude", "label": "REST", "style": "flow-amber" },
+    { "from": "nextjs", "to": "supabase-auth", "label": "JWT", "style": "flow-teal" }
+  ],
+  "assessment": {
+    "wins": [
+      "Same-origin API routes",
+      "Lazy summary generation",
+      "Privacy-first social features"
+    ],
+    "fixes": [
+      { "id": "fix-1", "title": "No rate limiting on summary endpoint", "severity": "HIGH" },
+      { "id": "fix-2", "title": "Streak reset has no grace period", "severity": "MEDIUM" },
+      { "id": "fix-3", "title": "Open Library search results not validated", "severity": "LOW" }
+    ],
+    "next_steps": [
+      { "id": "next-1", "title": "Add reading goal system", "impact": "Engagement" },
+      { "id": "next-2", "title": "Implement book clubs", "impact": "Social + Revenue" },
+      { "id": "next-3", "title": "Add export and data portability", "impact": "Trust" }
+    ]
+  }
+}
+</script>
+
+<script>
+  // Tab switching
+  var tabs = document.querySelectorAll('.tab-btn');
+  var panels = document.querySelectorAll('.tab-panel');
+
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var target = this.dataset.tab;
+
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      this.classList.add('active');
+
+      panels.forEach(function(p) {
+        p.classList.remove('active');
+        p.querySelectorAll('.anim-item').forEach(function(el) {
+          el.style.animation = 'none';
+          void el.offsetHeight;
+          el.style.animation = '';
+        });
+      });
+
+      var panel = document.getElementById('tab-' + target);
+      panel.classList.add('active');
+
+      // Stagger animations
+      panel.querySelectorAll('.anim-item').forEach(function(item, i) {
+        item.style.animationDelay = (i * 60) + 'ms';
+      });
+    }.bind(tab));
+  });
+
+  // Stat counter animation
+  function animateCounters() {
+    document.querySelectorAll('.stat-number[data-target]').forEach(function(el, i) {
+      var target = parseInt(el.dataset.target);
+      var duration = 600;
+      var start = performance.now();
+
+      setTimeout(function() {
+        function tick(now) {
+          var elapsed = now - start;
+          var progress = Math.min(elapsed / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.round(target * eased);
+          if (progress < 1) requestAnimationFrame(tick);
+        }
+        start = performance.now();
+        requestAnimationFrame(tick);
+      }, i * 120);
+    });
+  }
+
+  animateCounters();
+
+  // Assessment checkboxes with localStorage
+  var ASSESS_KEY = 'visualize-assess-shelf-architecture';
+
+  document.querySelectorAll('.assess-checkbox').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var state = JSON.parse(localStorage.getItem(ASSESS_KEY) || '{}');
+      state[this.dataset.key] = this.checked;
+      localStorage.setItem(ASSESS_KEY, JSON.stringify(state));
+
+      var item = this.closest('.assessment-item');
+      if (this.checked) {
+        item.classList.add('completed');
+      } else {
+        item.classList.remove('completed');
+      }
+
+      // Two-way sync
+      var key = this.dataset.key;
+      var checked = this.checked;
+      document.querySelectorAll('.assess-checkbox[data-key="' + key + '"]').forEach(function(sibling) {
+        if (sibling !== cb) {
+          sibling.checked = checked;
+          var sibItem = sibling.closest('.assessment-item');
+          if (checked) { sibItem.classList.add('completed'); }
+          else { sibItem.classList.remove('completed'); }
+        }
+      });
+
+      updateAssessProgress();
+    });
+  });
+
+  // Restore state
+  window.addEventListener('load', function() {
+    var state = JSON.parse(localStorage.getItem(ASSESS_KEY) || '{}');
+    Object.keys(state).forEach(function(key) {
+      document.querySelectorAll('.assess-checkbox[data-key="' + key + '"]').forEach(function(cb) {
+        cb.checked = state[key];
+        if (state[key]) cb.closest('.assessment-item').classList.add('completed');
+      });
+    });
+    updateAssessProgress();
+  });
+
+  function updateAssessProgress() {
+    var uniqueKeys = {};
+    document.querySelectorAll('[id^="assess-fix-"] .assess-checkbox, [id^="assess-next-"] .assess-checkbox').forEach(function(cb) {
+      uniqueKeys[cb.dataset.key] = cb.checked;
+    });
+    var keys = Object.keys(uniqueKeys);
+    var total = keys.length;
+    var done = keys.filter(function(k) { return uniqueKeys[k]; }).length;
+    var counter = document.getElementById('assess-progress');
+    if (counter) {
+      counter.textContent = done + ' of ' + total + ' addressed';
+      counter.style.color = done === total ? 'var(--teal)' : 'var(--text-secondary)';
+    }
+  }
+
+  // Copy buttons
+  document.querySelectorAll('.copy-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var text = this.parentElement.querySelector('.prompt-text').textContent;
+      navigator.clipboard.writeText(text);
+      this.textContent = 'COPIED';
+      var b = this;
+      setTimeout(function() { b.textContent = 'COPY'; }, 1500);
+    });
+  });
+</script>
+</body>
+</html>

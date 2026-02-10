@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Hackathon Kickoff — Feb 10, 2026</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #eeece2;
+    --surface: #ffffff;
+    --surface-hover: #f9f8f4;
+    --border: #d8d5c8;
+    --border-hover: #c4c0b2;
+    --text-primary: #3d3929;
+    --text-secondary: #6b6555;
+    --text-muted: #9a9484;
+    --accent: #da7756;
+    --accent-dark: #bd5d3a;
+    --accent-light: rgba(218,119,86,0.1);
+    --accent-teal: #2a9d8f;
+    --accent-teal-light: rgba(42,157,143,0.1);
+    --accent-amber: #d4a039;
+    --accent-amber-light: rgba(212,160,57,0.1);
+    --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-serif);
+    font-size: 16px;
+    line-height: 1.7;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 24px 120px;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 32px;
+  }
+
+  .header-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .header-label .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .header-label span {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  h1 {
+    font-weight: 400;
+    font-size: 34px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+  }
+
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .meta-item { display: flex; align-items: center; gap: 6px; }
+  .meta-item .label { color: var(--text-secondary); font-weight: 500; }
+
+  /* Tabs */
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 36px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 16px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+
+  .tab-btn:hover { color: var(--text-secondary); }
+
+  .tab-btn.active { color: var(--accent-dark); }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+  }
+
+  /* Tab Content */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .tab-panel.active .anim-item {
+    opacity: 0;
+    animation: fadeSlideUp 0.3s ease-out forwards;
+  }
+
+  .tab-panel.active .anim-item:nth-child(1) { animation-delay: 0ms; }
+  .tab-panel.active .anim-item:nth-child(2) { animation-delay: 50ms; }
+  .tab-panel.active .anim-item:nth-child(3) { animation-delay: 100ms; }
+  .tab-panel.active .anim-item:nth-child(4) { animation-delay: 150ms; }
+  .tab-panel.active .anim-item:nth-child(5) { animation-delay: 200ms; }
+  .tab-panel.active .anim-item:nth-child(6) { animation-delay: 250ms; }
+  .tab-panel.active .anim-item:nth-child(7) { animation-delay: 300ms; }
+  .tab-panel.active .anim-item:nth-child(8) { animation-delay: 350ms; }
+  .tab-panel.active .anim-item:nth-child(9) { animation-delay: 400ms; }
+  .tab-panel.active .anim-item:nth-child(10) { animation-delay: 450ms; }
+
+  /* Stats Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    border-radius: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: var(--border-hover); }
+
+  .stat-card .number {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--accent-dark);
+    letter-spacing: -0.02em;
+  }
+
+  .stat-card .desc {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* Section headers */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .section-label .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .section-label span {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  /* Content cards */
+  .content-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .content-card:hover { border-color: var(--border-hover); }
+
+  .content-card h3 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+  }
+
+  .content-card p, .content-card li {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .content-card p + p { margin-top: 10px; }
+
+  .content-card ul {
+    list-style: none;
+    margin-top: 8px;
+  }
+
+  .content-card ul li {
+    padding: 6px 0 6px 18px;
+    position: relative;
+  }
+
+  .content-card ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 15px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+
+  .tag-required { background: var(--accent-light); color: var(--accent-dark); }
+  .tag-info { background: var(--accent-teal-light); color: var(--accent-teal); }
+  .tag-warning { background: var(--accent-amber-light); color: var(--accent-amber); }
+
+  .highlight {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* Prizes */
+  .prize-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+
+  .prize-row:hover { border-color: var(--border-hover); }
+
+  .prize-place {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .prize-amount {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--accent-dark);
+  }
+
+  .prize-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    margin-top: 12px;
+    background: var(--accent-light);
+    border-radius: 12px;
+  }
+
+  .prize-total .prize-place {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .prize-total .prize-amount {
+    font-size: 22px;
+    color: var(--accent-dark);
+  }
+
+  /* Timeline */
+  .timeline-row {
+    display: flex;
+    gap: 20px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+    transition: border-color 0.2s;
+  }
+
+  .timeline-row:hover { border-color: var(--border-hover); }
+
+  .timeline-date {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-dark);
+    min-width: 130px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+
+  .timeline-content {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .timeline-content strong {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .timeline-deadline {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--surface), var(--accent-light));
+  }
+
+  /* Lesson cards */
+  .lesson-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .lesson-card:hover { border-color: var(--border-hover); }
+
+  .lesson-number {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .lesson-card h3 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 19px;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+
+  .lesson-card p {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  .lesson-card .takeaway {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  /* Speaker sections (transcript tab) */
+  .speaker-section { margin-bottom: 40px; }
+
+  .speaker-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .speaker-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .speaker-avatar.jason { background: var(--accent); }
+  .speaker-avatar.boris { background: var(--accent-teal); }
+  .speaker-avatar.ivan { background: var(--accent-amber); }
+
+  .speaker-info h2 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+
+  .speaker-info .role {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+  }
+
+  .transcript-text {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.85;
+  }
+
+  .transcript-text p { margin-bottom: 16px; }
+
+  .quote-block {
+    border-left: 3px solid var(--accent);
+    padding: 14px 20px;
+    margin: 20px 0;
+    background: var(--surface);
+    border-radius: 0 10px 10px 0;
+  }
+
+  .quote-block p {
+    color: var(--text-primary);
+    font-style: italic;
+    margin-bottom: 0;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .container { padding: 32px 16px 80px; }
+    h1 { font-size: 26px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .meta { flex-direction: column; gap: 8px; }
+    .tab-btn { padding: 10px 12px; font-size: 12px; }
+    .timeline-row { flex-direction: column; gap: 4px; }
+    .timeline-date { min-width: unset; }
+    .prize-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-label">
+      <div class="dot"></div>
+      <span>Hackathon Kickoff</span>
+    </div>
+    <h1>Claude Code Hackathon</h1>
+    <p class="subtitle">First virtual global hackathon celebrating Claude Code's first birthday season</p>
+    <div class="meta">
+      <div class="meta-item"><span class="label">Date</span> Feb 10, 2026</div>
+      <div class="meta-item"><span class="label">Format</span> Virtual</div>
+      <div class="meta-item"><span class="label">Duration</span> Feb 10-16</div>
+      <div class="meta-item"><span class="label">Submissions Due</span> Mon Feb 16, 3 PM ET</div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="rules">Rules</button>
+    <button class="tab-btn" data-tab="prizes">Prizes</button>
+    <button class="tab-btn" data-tab="timeline">Timeline</button>
+    <button class="tab-btn" data-tab="lessons">Key Lessons</button>
+    <button class="tab-btn" data-tab="transcript">Full Transcript</button>
+  </nav>
+
+  <!-- TAB: OVERVIEW -->
+  <div class="tab-panel active" id="tab-overview">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>By the Numbers</span>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card anim-item">
+        <div class="number">13,000+</div>
+        <div class="desc">Applications received</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="number">500</div>
+        <div class="desc">Hackers selected (~4%)</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="number">45</div>
+        <div class="desc">Countries represented</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="number">107</div>
+        <div class="desc">Founders in the group</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="number">68</div>
+        <div class="desc">Students</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="number">89</div>
+        <div class="desc">Building for a family member</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="number">20%</div>
+        <div class="desc">From the Global South</div>
+      </div>
+      <div class="stat-card anim-item">
+        <div class="number">4%</div>
+        <div class="desc">Claude Code's share of global commits</div>
+      </div>
+    </div>
+
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Who's Here</span>
+    </div>
+    <div class="content-card anim-item">
+      <p>This group includes builders from San Francisco, New York, Bangalore, Sao Paulo, London, Singapore -- and someone from a town of <span class="highlight">2,000 people in Iceland</span>.</p>
+      <p>107 founders. 68 students. A Harvard professor. A high school student in India who's CTO of two startups. An ER doctor in Turkey who built a diagnostic app. Solo builders, freelancers, and engineers at major tech companies.</p>
+    </div>
+
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>What You've Already Built</span>
+    </div>
+    <div class="content-card anim-item">
+      <ul>
+        <li>A cinema management platform handling <span class="highlight">real daily transactions</span> for a cinema chain in Mexico</li>
+        <li>Automated a 40-minute bank process to <span class="highlight">6 seconds</span> -- saving $100K+/year at one of Brazil's largest banks</li>
+        <li>A Brooklyn butcher shop pre-order system generating <span class="highlight">$100K+ in revenue</span></li>
+        <li>An enterprise CRM for Turkey's cable and energy sector</li>
+        <li>A bonds market platform <span class="highlight">live in production</span> in Uganda</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TAB: RULES -->
+  <div class="tab-panel" id="tab-rules">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Hackathon Rules</span>
+    </div>
+
+    <div class="content-card anim-item">
+      <span class="tag tag-required">Required</span>
+      <h3>Open Source</h3>
+      <p>Everything must be open source. GitHub repositories will be checked during judging.</p>
+    </div>
+
+    <div class="content-card anim-item">
+      <span class="tag tag-required">Required</span>
+      <h3>Start from Scratch</h3>
+      <p>No previous work allowed. All projects must be started fresh during the hackathon period.</p>
+    </div>
+
+    <div class="content-card anim-item">
+      <span class="tag tag-info">Team Size</span>
+      <h3>Max 2 Team Members</h3>
+      <p>Solo or pairs only. No larger teams.</p>
+    </div>
+
+    <div class="content-card anim-item">
+      <span class="tag tag-warning">Disqualification</span>
+      <h3>Legal &amp; Ethical Compliance</h3>
+      <p>You will be disqualified if you violate legal, ethical, or platform policies -- or if you use code, data, or assets you don't have the rights to.</p>
+    </div>
+
+    <div class="content-card anim-item">
+      <span class="tag tag-required">Required</span>
+      <h3>Video Submission</h3>
+      <p>A video is required with your submission. Judges will review your GitHub repo, project description, and <span class="highlight">most importantly the video</span>. Dedicate real time to making this.</p>
+    </div>
+
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Problem Statements</span>
+    </div>
+
+    <div class="content-card anim-item">
+      <h3>Choose one of three tracks:</h3>
+      <ul>
+        <li><span class="highlight">Build a tool that should exist</span> -- solve a real problem that's currently unsolved</li>
+        <li><span class="highlight">Break the barriers</span> -- make something accessible that wasn't before</li>
+        <li><span class="highlight">Amplify human judgment</span> -- augment human decision-making with AI</li>
+      </ul>
+      <p style="margin-top: 12px;">More details and example projects available in the hacker resources document.</p>
+    </div>
+
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Questions?</span>
+    </div>
+    <div class="content-card anim-item">
+      <p>Post in the <span class="highlight">#questions</span> channel on Discord or tag <span class="highlight">@ipirrello</span>.</p>
+    </div>
+  </div>
+
+  <!-- TAB: PRIZES -->
+  <div class="tab-panel" id="tab-prizes">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Prize Pool</span>
+    </div>
+
+    <div class="anim-item">
+      <div class="prize-row">
+        <span class="prize-place">1st Place</span>
+        <span class="prize-amount">$50,000</span>
+      </div>
+      <div class="prize-row">
+        <span class="prize-place">2nd Place</span>
+        <span class="prize-amount">$30,000</span>
+      </div>
+      <div class="prize-row">
+        <span class="prize-place">3rd Place</span>
+        <span class="prize-amount">$10,000</span>
+      </div>
+    </div>
+
+    <div class="section-label anim-item" style="margin-top: 28px;">
+      <div class="dot"></div>
+      <span>Special Prizes</span>
+    </div>
+
+    <div class="anim-item">
+      <div class="prize-row">
+        <span class="prize-place">Most Creative Opus 4.6 Exploration</span>
+        <span class="prize-amount">$5,000</span>
+      </div>
+      <div class="prize-row">
+        <span class="prize-place">Keep Thinking Prize</span>
+        <span class="prize-amount">$5,000</span>
+      </div>
+    </div>
+
+    <div class="prize-total anim-item">
+      <span class="prize-place">Total Prize Pool</span>
+      <span class="prize-amount">$100,000</span>
+    </div>
+
+    <div class="content-card anim-item" style="margin-top: 20px;">
+      <span class="tag tag-info">Note</span>
+      <p>All prizes are awarded as <span class="highlight">Claude API credits</span>.</p>
+    </div>
+
+    <div class="section-label anim-item" style="margin-top: 28px;">
+      <div class="dot"></div>
+      <span>Judging</span>
+    </div>
+    <div class="content-card anim-item">
+      <h3>Two-Round Process</h3>
+      <ul>
+        <li><span class="highlight">Round 1 (Tue Feb 17):</span> Async review of all submissions -- top 6 selected</li>
+        <li><span class="highlight">Round 2 (Wed Feb 18):</span> Live panel review by Claude Code team judges</li>
+      </ul>
+      <p style="margin-top: 10px;">Judges will evaluate: GitHub repo, project description, and your video submission.</p>
+    </div>
+  </div>
+
+  <!-- TAB: TIMELINE -->
+  <div class="tab-panel" id="tab-timeline">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Hackathon Schedule</span>
+    </div>
+
+    <div class="anim-item">
+      <div class="timeline-row">
+        <span class="timeline-date">Mon Feb 10</span>
+        <div class="timeline-content"><strong>Kickoff</strong> -- Hacking begins after this call</div>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-date">Daily, 5-6 PM ET</span>
+        <div class="timeline-content"><strong>Office Hours</strong> -- Live Q&amp;A with the Anthropic team</div>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-date">Wed Feb 12</span>
+        <div class="timeline-content"><strong>Live Session</strong> -- From the Anthropic team</div>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-date">Fri Feb 14</span>
+        <div class="timeline-content"><strong>Live Session</strong> -- From the Anthropic team</div>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-date">Sun Feb 16</span>
+        <div class="timeline-content"><strong>Live Session</strong> -- From the Anthropic team</div>
+      </div>
+    </div>
+
+    <div class="section-label anim-item" style="margin-top: 28px;">
+      <div class="dot"></div>
+      <span>Deadlines</span>
+    </div>
+
+    <div class="anim-item">
+      <div class="timeline-row timeline-deadline">
+        <span class="timeline-date">Mon Feb 16, 3 PM ET</span>
+        <div class="timeline-content"><strong>Submissions Due</strong> -- Video + GitHub repo + description via the platform</div>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-date">Tue Feb 17</span>
+        <div class="timeline-content"><strong>Async Judging</strong> -- All submissions reviewed, top 6 selected</div>
+      </div>
+      <div class="timeline-row">
+        <span class="timeline-date">Wed Feb 18</span>
+        <div class="timeline-content"><strong>Live Finals</strong> -- Top 6 reviewed by Claude Code team panel</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: KEY LESSONS -->
+  <div class="tab-panel" id="tab-lessons">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Boris Tcherny's Lessons from Building Claude Code</span>
+    </div>
+
+    <div class="lesson-card anim-item">
+      <div class="lesson-number">Lesson 01</div>
+      <h3>Build for the model 6 months from now</h3>
+      <p>Claude Code wasn't an instant hit at launch in February. It went mainstream in May when Sonnet 4 and Opus 4 arrived. Boris started building in September 2024 on Sonnet 3.5, deliberately building for the future model so the product would click when the model caught up.</p>
+      <div class="takeaway">Don't build for Opus 4.6 -- build for the model six months after Opus 4.6. Feel out the boundaries of what the model can do; those things will improve.</div>
+    </div>
+
+    <div class="lesson-card anim-item">
+      <div class="lesson-number">Lesson 02</div>
+      <h3>Think in terms of latent demand</h3>
+      <p>Go to where the users are. Don't try to make people do a new thing -- make the existing thing they're doing a little easier. The terminal survived as a UI because it's where engineers already live.</p>
+      <p style="margin-top: 10px;">The same applies to models: look at what the model is <em>trying</em> to do, and redesign your tools to align with that. In model training, this is called being <span class="highlight">on distribution</span>.</p>
+      <div class="takeaway">If you try to make the model do something it doesn't want to do, you're not gonna have a good time.</div>
+    </div>
+
+    <div class="lesson-card anim-item">
+      <div class="lesson-number">Lesson 03</div>
+      <h3>Automate everything</h3>
+      <p>At Anthropic, Claude Code handles: code review (running in CI on GitHub, open source), GitHub issue labeling and triage, de-duping issues, feedback triage, security review, and production launches.</p>
+      <p style="margin-top: 10px;">The best way: use the <span class="highlight">Claude Agent SDK</span> -- the same agent under Claude Code's hood, available as TypeScript or Python. Or use <code style="background:var(--accent-light);padding:2px 6px;border-radius:4px;font-size:13px;">claude -p</code> or the Anthropic API directly.</p>
+      <div class="takeaway">Anything tedious, repetitive, or that you don't want to do yourself -- just automate it.</div>
+    </div>
+
+    <div class="section-label anim-item" style="margin-top: 36px;">
+      <div class="dot"></div>
+      <span>Claude Code Today</span>
+    </div>
+
+    <div class="content-card anim-item">
+      <ul>
+        <li>Semianalysis study: Claude Code writes <span class="highlight">4% of all public commits worldwide</span> (estimated 8-10% private)</li>
+        <li>Mercury study: <span class="highlight">70% of new startups</span> are choosing Claude as their model</li>
+        <li>Growth has been exponential since launch -- and the exponential is <span class="highlight">accelerating</span></li>
+        <li>Claude routinely runs for <span class="highlight">hours unattended</span>; some instances ran for weeks producing useful work</li>
+        <li>NASA used it to plot trajectory for the <span class="highlight">Perseverance Rover on Mars</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TAB: FULL TRANSCRIPT -->
+  <div class="tab-panel" id="tab-transcript">
+    <div class="section-label anim-item">
+      <div class="dot"></div>
+      <span>Full Transcript</span>
+    </div>
+
+    <section class="speaker-section anim-item">
+      <div class="speaker-header">
+        <div class="speaker-avatar jason">J</div>
+        <div class="speaker-info">
+          <h2>Jason</h2>
+          <div class="role">Anthropic</div>
+        </div>
+      </div>
+      <div class="transcript-text">
+        <p>It's only been one year since we released Claude Code, and since then, the world of building has completely changed. Experienced developers are shipping at a rate previously impossible, and also people who have never touched code are building real production projects. And increasingly, <span class="highlight">the biggest limitation is your ideas</span>. What problems have yet to be solved and how could you use Claude Code to solve it?</p>
+
+        <p>So this hackathon kicks off our first birthday season for Claude Code, celebrating the unlock and problem-solving it's given to the world, and also having you all show us new problems that it can solve.</p>
+
+        <p>This, very excitingly, is our first virtual global hackathon, and we were blown away by the number of applications. We had <span class="highlight">over 13,000 applications for 500 spots</span>, which puts us a little bit below 4% acceptance rate -- about as selective as Y Combinator or MIT.</p>
+
+        <p>Overall though, in terms of this group, the 500 people that are gonna be building for the next week, this room is very experienced with Claude Code. In a lot of ways, you all are not here to learn, you're here to show us what this tool can do, and you've already been doing that.</p>
+
+        <div class="quote-block">
+          <p>Someone in this group built a cinema management platform that handles real transactions daily for a cinema chain in Mexico. Another builder from Brazil automated a 40-minute manual process at one of the country's largest banks down to six seconds, saving over $100,000 a year. And a personal injury lawyer built his cousin's butcher shop in Brooklyn a pre-order system that's generated over $100,000 in revenue and then automated his entire legal practice.</p>
+        </div>
+
+        <p>So you all know what you're doing. You're already building with Claude Code. In terms of representation, you all represent <span class="highlight">45 countries</span>. Of course, we have lots of big cities -- San Francisco, New York, Bangalore, Sao Paulo, London, Singapore -- but we also have someone from a town of 2,000 people in Iceland.</p>
+
+        <p>You all represent: we have 107 founders, 68 students. We have people from large tech companies, but we also have solo builders and freelancers. We have a Harvard professor, a high school student in India who's already CTO of two startups, and an ER doctor in Turkey who's built a diagnostic app with Claude Code. You all run the gamut. And a fifth of you are from the Global South.</p>
+
+        <p>Looking at what you've already built -- we have a builder from Turkey who's shipped a full enterprise CRM for the cable and energy sector in their country, and one of you in Uganda built a bonds market platform that is live in production. These are clearly not demos. <span class="highlight">This is real infrastructure for real economies that you all have delivered.</span></p>
+
+        <p>In terms of what you're looking to build this week, amazing ideas across the board. But one thing that stood out to me is that <span class="highlight">89 of you are looking to build something for a family member this week</span>, which shows that with Claude Code, the problems we solve can be macro, business-oriented, and they can also be personal.</p>
+
+        <p>The thread through everyone in this group is that you're solving real problems. This is not producing AI slop. This is not creating shiny demos. You all have proven what Claude Code can do, and now we want to see what Opus 4.6 unlocks for you all.</p>
+      </div>
+    </section>
+
+    <section class="speaker-section anim-item">
+      <div class="speaker-header">
+        <div class="speaker-avatar boris">B</div>
+        <div class="speaker-info">
+          <h2>Boris Tcherny</h2>
+          <div class="role">Creator of Claude Code, Anthropic</div>
+        </div>
+      </div>
+      <div class="transcript-text">
+        <p>So exciting that everyone is here and is building using Opus 4.6 and Claude Code. Reflecting back over the last year, like Jason said, it's been almost a year since Claude Code came out, but it's actually not quite a year. It's like a year minus two weeks or something. Time just goes so fast in AI.</p>
+
+        <p>Back in February of last year, we launched Claude Code. It only lived in a terminal. And people used it, and it was the craziest thing. Engineers were going out of their way to use a terminal. People that had never used a terminal were using the terminal.</p>
+
+        <div class="quote-block">
+          <p>I remember walking into the office, and our data scientist -- he writes SQL all day -- figured out how to install Node.js, how to open up a terminal, and then how to use Claude Code to run SQL queries. He hadn't coded before. He hadn't used a terminal before. But he figured it out. And then the next week, the entire row of data scientists had Claude Code running, and they had multiple instances writing SQL and doing data analytics, with little ASCII charts in their terminals.</p>
+        </div>
+
+        <p>Over the last year, it's been surprising how long-lived the terminal has been as a UI. My thought was we'd start in a terminal, and then move on to something else. Now we have VS Code extensions, JetBrains extensions, claude.ai/code for web, iOS and Android apps, Slack and GitHub apps, the Claude desktop app. That's actually what I use for a lot of my coding nowadays. But despite all this, <span class="highlight">the terminal is still one of the most popular ways to use Claude Code</span>. It's just so lightweight and so native for engineers.</p>
+
+        <p>My lesson from this is: go to where the users are and don't try to make people do a new thing. Try to make the existing thing they're doing a little bit easier. In product, we call this idea <span class="highlight">latent demand</span>.</p>
+
+        <p>The second thing -- I've been blown away by how much people have been using Claude Code. It started as a hackathon project and now <span class="highlight">NASA was using it to plot a course for the Perseverance Rover on Mars</span>. Back in the Sonnet 3.5 days, Claude could do maybe 10 seconds of work unattended and then it would go off the rails. But now it routinely runs for hours at a time. In some cases, I run it for multiple days. There are instances where we ran it for weeks and it produced useful work.</p>
+
+        <p>I think the last thing that's been surprising is seeing the community that sprung up around Claude Code. It started with just me for the first few months, and honestly it was very lonely. I was working on this thing and no one else really realized it would be something useful. I didn't even know. But I just felt really excited, so I kept jamming on it. And then the daily active users started to climb.</p>
+
+        <p><strong>Where are we today?</strong> There was a study from Semianalysis that <span class="highlight">Claude Code now writes 4% of all commits in the world</span>. That's just public repos -- the number for private is probably around 8 to 10%. Another study from Mercury shows that <span class="highlight">70% of startups starting today are choosing Claude as their model of choice</span>. The growth has been exponential and the exponential has been accelerating.</p>
+
+        <p><strong>Lessons from building Claude Code:</strong></p>
+
+        <p><strong>1. Don't build for the model of today. Build for the model six months from now.</strong> When Claude Code first released in February, it wasn't an instant success. It took until May when Sonnet 4 and Opus 4 came out for it to go mainstream. I started working on Claude Code back in September 2024 with Sonnet 3.5. From the start, I wanted to build for the model six months from now so we could figure out the product and user experience, and when the model arrives, the product clicks. <span class="highlight">Don't build for Opus 4.6 -- build for the model six months after.</span></p>
+
+        <p><strong>2. Think in terms of latent demand.</strong> Look at what your users are doing and what they're trying to do. If you make that a little bit easier, you're gonna have a hit. With models, there's an interesting corollary: look at what the model is trying to do and make that easier. If you try to make the model do something it doesn't want to do, you're not gonna have a good time. In model training, we call this being <span class="highlight">on distribution</span>. In product, we call this latent demand.</p>
+
+        <p><strong>3. Automate everything.</strong> People don't just use Claude Code to write code -- they also use it to automate stuff. At Anthropic, all of our code review is done using Claude Code running in CI on GitHub. Our code review action is open source. We use it for labeling and triaging GitHub issues, de-duping issues, triaging feedback, security review, and launches. Every version that goes out is tested by Claude Code and shepherded to production with Claude Code. <span class="highlight">The best way to do this is using the Claude Agent SDK.</span> It's the same agent Claude Code uses under the hood, available programmatically in TypeScript or Python.</p>
+      </div>
+    </section>
+
+    <section class="speaker-section anim-item">
+      <div class="speaker-header">
+        <div class="speaker-avatar ivan">I</div>
+        <div class="speaker-info">
+          <h2>Ivan Pirollo</h2>
+          <div class="role">Cerebral Valley / Hackathon Organizer -- @ipirrello</div>
+        </div>
+      </div>
+      <div class="transcript-text">
+        <p>My name is Ivan Pirollo, @ipirrello on Discord. I'm one of the organizers behind Cerebral Valley. We host some of the largest hackathons around the world. I'm super excited to host this one with the Claude Code team.</p>
+
+        <p><strong>Hackathon Rules:</strong> Everything needs to be open source. No previous work allowed -- all projects must start from scratch. Max two team members. You will be disqualified if you violate legal, ethical, or platform policies, or use code, data, or assets you don't have rights to.</p>
+
+        <p><strong>Problem Statements:</strong> Build a tool that should exist. Break the barriers. Amplify human judgment.</p>
+
+        <p><strong>Prizes:</strong> First place: $50,000 in Claude API credits. Second place: $30,000. Third place: $10,000. Two special prizes: Most Creative Opus 4.6 Exploration and Keep Thinking Prize, both $5,000 in API credits.</p>
+
+        <p><strong>Timeline:</strong> Hackathon runs about a week starting today. Office hours daily 5-6 PM ET. Live sessions on Wednesday, Friday, and Sunday. Submissions due Monday at 3 PM ET. Async judging Tuesday -- top 6 selected. Live panel review by Claude Code team judges on Wednesday.</p>
+
+        <p><strong>Submission notes:</strong> A <span class="highlight">video submission is required</span> -- judges will review your GitHub repo, description, and most importantly the video. Make sure you focus some time on making that video to describe what you built.</p>
+
+        <p>If there are any questions, post in the questions channel or in Discord. Tag @ipirrello.</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    Claude Code Hackathon -- Feb 10-16, 2026 -- Anthropic x Cerebral Valley<br>
+    Transcript captured from kickoff call -- made by <a href="https://x.com/eddiebe" target="_blank" style="color:var(--accent-dark);text-decoration:none;">@eddiebe</a>
+  </footer>
+
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      panels.forEach(p => {
+        p.classList.remove('active');
+        p.querySelectorAll('.anim-item').forEach(el => {
+          el.style.animation = 'none';
+          el.offsetHeight;
+          el.style.animation = '';
+        });
+      });
+
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
