@@ -1,13 +1,10 @@
 # Claude Code Artifacts
 
-Two [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills that generate self-contained, interactive HTML artifacts from natural language.
+> **This repo has moved.** All tools — including `/visualize`, `/blueprint`, `BUILDING-SETUP.md`, and more — now live in **[id8-toolkit](https://github.com/eddiebelaval/id8-toolkit)**. Head there for the latest versions, new tools, and the install script.
 
-| Skill | Purpose | Command |
-|-------|---------|---------|
-| **`/visualize`** | Explain what exists | `/visualize [topic]` |
-| **`/blueprint`** | Plan what to build | `/blueprint [project]` |
+---
 
-Both produce zero-dependency HTML files with a shared design system: dark theme, animated SVG diagrams, tabbed views, persistent checkboxes, and copy-paste prompts.
+*The original `/visualize` and `/blueprint` files below still work, but id8-toolkit is where everything gets updated going forward.*
 
 ## Installation
 
