@@ -1,10 +1,10 @@
 # Claude Code Artifacts
 
-> **This repo has moved.** All tools — including `/visualize`, `/blueprint`, `BUILDING-SETUP.md`, and more — now live in **[id8-toolkit](https://github.com/eddiebelaval/id8-toolkit)**. Head there for the latest versions, new tools, and the install script.
+> **This repo has moved.** All tools — including `/visualize`, `/blueprint`, `BUILDING-SETUP.md`, and more — now live in **[Squire](https://github.com/eddiebelaval/squire)**, an agent operating system for AI-assisted development. Head there for the latest versions, new tools, and the install script.
 
 ---
 
-*The original `/visualize` and `/blueprint` files below still work, but id8-toolkit is where everything gets updated going forward.*
+*The original `/visualize` and `/blueprint` files below still work, but [Squire](https://github.com/eddiebelaval/squire) is where everything gets updated going forward.*
 
 ## Installation
 
