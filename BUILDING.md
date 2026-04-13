@@ -2,7 +2,7 @@
 
 > The origin story of /visualize and /blueprint -- prompt engineering as product development.
 
-Last updated: 2026-03-18
+Last updated: 2026-04-13
 
 ---
 
@@ -32,3 +32,7 @@ The project began with a vague request: "make me an HTML visualization." The fir
 ## Migration to Squire
 
 When Squire formed as the unified Claude Code toolkit (collecting behavioral rules, slash commands, skills, agents, and pipelines into one repo), `/visualize` and `/blueprint` were natural candidates for inclusion. They migrated in March 2026. The original repo README now points users to Squire, and no further development happens here.
+
+## Status (Apr 2026)
+
+Archived. All active development of /visualize and /blueprint continues in the Squire repo. This repo exists only as a redirect. No changes expected.
